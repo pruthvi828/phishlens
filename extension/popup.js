@@ -108,7 +108,7 @@ function setOrb(score, colorHex) {
   orb.style.setProperty("--orb-color", colorHex);
   if (num) {
     num.style.color = colorHex;
-    num.textContent = score === 0 ? "—" : String(score);
+    num.textContent = typeof score === "number" ? String(Math.round(score)) : "0";
   }
 }
 
@@ -337,17 +337,26 @@ async function loadTabResult(rescan = false) {
       chrome.runtime.sendMessage({ type: "netra-get-cached-result", tabId: tab.id }, (cached) => {
         if (!chrome.runtime.lastError && cached && cached.result) {
           paintResult(cached.result);
-        } else if (aiEnabled && rawUrl.startsWith("http")) {
-          // Trigger background Gemini analysis for active tab if not yet analyzed
-          try {
-            chrome.runtime.sendMessage({
-              type: "netra-trigger-gemini",
-              tabId: tab.id,
-              url: rawUrl,
-              score: localRes ? localRes.score : 0,
-              signals: localRes ? localRes.signals : []
-            });
-          } catch (e) {}
+          if (aiEnabled && rawUrl.startsWith("http") && !cached.result.geminiResult && window.NETRA_Gemini) {
+            NETRA_Gemini.callGemini(rawUrl, cached.result.score, cached.result.signals || [], "")
+              .then((geminiResult) => {
+                if (geminiResult) {
+                  const enriched = NETRA_Gemini.mergeResults(cached.result, geminiResult);
+                  paintResult(enriched);
+                  chrome.runtime.sendMessage({ type: "netra-score", result: enriched });
+                }
+              }).catch(() => {});
+          }
+        } else if (aiEnabled && rawUrl.startsWith("http") && window.NETRA_Gemini) {
+          // Trigger live Gemini analysis directly from popup for instantaneous AI verdict
+          NETRA_Gemini.callGemini(rawUrl, localRes ? localRes.score : 0, localRes ? localRes.signals : [], "")
+            .then((geminiResult) => {
+              if (geminiResult) {
+                const enriched = NETRA_Gemini.mergeResults(localRes || { url: rawUrl, score: 0 }, geminiResult);
+                paintResult(enriched);
+                chrome.runtime.sendMessage({ type: "netra-score", result: enriched });
+              }
+            }).catch(() => {});
         }
       });
     } catch (e) {}
@@ -396,38 +405,32 @@ document.getElementById("btn-analyze").addEventListener("click", () => {
   renderInspectResult(inspected, res);
 
   // If AI is enabled, trigger live Gemini AI analysis for the inspected link
-  if (aiEnabled && (raw.startsWith("http") || raw.includes("."))) {
+  if (aiEnabled && (raw.startsWith("http") || raw.includes(".")) && window.NETRA_Gemini) {
     const aiTargetUrl = raw.startsWith("http") ? raw : `https://${raw}`;
     const aiBox = document.createElement("div");
     aiBox.style.cssText = "font-size:10px;color:var(--violet);padding:6px 0 2px;display:flex;align-items:center;gap:6px;";
     aiBox.innerHTML = '<span class="ai-spinner" style="width:11px;height:11px;"></span> Gemini AI analyzing link…';
     res.appendChild(aiBox);
 
-    try {
-      chrome.runtime.sendMessage({
-        type: "netra-inspect-gemini",
-        url: aiTargetUrl,
-        score: inspected.score,
-        signals: inspected.signals
-      }, (resp) => {
-        if (!chrome.runtime.lastError && resp && resp.geminiResult) {
-          const g = resp.geminiResult;
+    NETRA_Gemini.callGemini(aiTargetUrl, inspected.score, inspected.signals || [], "")
+      .then((g) => {
+        if (g) {
           aiBox.innerHTML = `
             <div style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);border-radius:6px;padding:7px 10px;margin-top:6px;color:#e2e8f0;line-height:1.4;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
                 <span style="color:#c084fc;font-weight:800;font-size:9.5px;letter-spacing:0.5px;">✦ GEMINI AI VERDICT:</span>
-                <span style="font-weight:800;font-size:10px;color:${g.verdict==='Phishing'?'#f43f5e':g.verdict==='Safe'?'#10b981':'#f59e0b'}">${g.verdict.toUpperCase()} · ${g.geminiScore}/100</span>
+                <span style="font-weight:800;font-size:10px;color:${g.verdict==='Phishing'?'#f43f5e':g.verdict==='Safe'?'#10b981':'#f59e0b'}">${g.verdict.toUpperCase()} · Risk ${g.geminiScore}/100</span>
               </div>
               <div style="font-size:10px;color:#cbd5e1;">${g.reasoning || ""}</div>
             </div>
           `;
         } else {
-          aiBox.remove();
+          aiBox.innerHTML = '<span style="color:#94a3b8;font-size:10px;">Local heuristic inspection complete.</span>';
         }
+      })
+      .catch(() => {
+        aiBox.innerHTML = '<span style="color:#94a3b8;font-size:10px;">Local heuristic inspection complete.</span>';
       });
-    } catch (e) {
-      aiBox.remove();
-    }
   }
 });
 
@@ -443,12 +446,8 @@ document.getElementById("url-input").addEventListener("keydown", (e) => {
 /* ─── Live Gemini AI Update from Background ─── */
 try {
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg && (msg.type === "netra-gemini-update" || msg.type === "pl-gemini-update") && msg.result) {
-      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-        if (tab && tab.id === msg.tabId) {
-          paintResult(msg.result);
-        }
-      });
+    if (msg && msg.type === "netra-gemini-update" && msg.result) {
+      paintResult(msg.result);
     }
   });
 } catch (e) {

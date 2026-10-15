@@ -50,24 +50,26 @@ function buildPrompt(url, localScore, localSignals, pageTextSnippet) {
 
   const textSnip = (pageTextSnippet || "").slice(0, 800);
 
-  return `You are a cybersecurity expert specializing in phishing detection.
-Analyze the following URL and its context for phishing risk.
-Respond ONLY with a valid JSON object in the exact format shown below — no prose, no markdown fences.
-
+  return `You are a cybersecurity expert analyzing URLs for phishing and fraud risk.
+Analyze the following URL and context:
 URL: ${url}
-Local heuristic score (0–100): ${localScore}
-Local signals detected:
+Local heuristic score (0–100, where 0 is safe): ${localScore}
+Signals detected:
 ${sigSummary || "None"}
-Visible page text snippet:
+Page text:
 ${textSnip || "Not available"}
 
-JSON response format:
+RULES:
+- If this URL belongs to a legitimate, well-known, or official service (e.g. Amazon, Google, YouTube, Facebook, Apple, Microsoft, legitimate accredited universities, banks, etc.), verdict MUST be "Safe" and phishingRiskScore MUST be 0.
+- If this URL is a typosquat, fake university login, credential harvesting page, or deceptive lure, verdict MUST be "Phishing" or "Suspicious" and phishingRiskScore MUST be 70-100.
+
+Respond ONLY with a valid JSON object in this exact schema (no markdown, no backticks):
 {
-  "geminiScore": <integer 0-100, phishing risk>,
-  "verdict": "<one of: Safe | Suspicious | Phishing>",
-  "confidence": "<one of: High | Medium | Low>",
-  "reasoning": "<1-2 sentences max explaining key phishing indicators or why it is safe>",
-  "topIndicators": ["<indicator 1>", "<indicator 2>", "<indicator 3>"]
+  "phishingRiskScore": <integer 0-100, where 0 is completely safe and 100 is dangerous phishing>,
+  "verdict": "<Safe | Suspicious | Phishing>",
+  "confidence": "<High | Medium | Low>",
+  "reasoning": "<1-2 sentences plain-English explanation>",
+  "topIndicators": ["<indicator 1>", "<indicator 2>"]
 }`;
 }
 
@@ -140,11 +142,19 @@ async function callGemini(url, localScore, localSignals, pageTextSnippet) {
       }
     }
 
+    const rawScore = Number(parsed.phishingRiskScore !== undefined ? parsed.phishingRiskScore : parsed.geminiScore);
+    const verdict = String(parsed.verdict || "Suspicious");
+    let cleanScore = Math.max(0, Math.min(100, isNaN(rawScore) ? 0 : rawScore));
+    // If verdict is Safe, ensure phishing risk score is strictly 0
+    if (verdict.toLowerCase() === "safe") {
+      cleanScore = 0;
+    }
+
     // Validate and clamp the score
     const result = {
-      geminiScore:    Math.max(0, Math.min(100, Number(parsed.geminiScore) || 0)),
-      verdict:        String(parsed.verdict || "Suspicious"),
-      confidence:     String(parsed.confidence || "Low"),
+      geminiScore:    cleanScore,
+      verdict:        verdict,
+      confidence:     String(parsed.confidence || "High"),
       reasoning:      String(parsed.reasoning || ""),
       topIndicators:  Array.isArray(parsed.topIndicators) ? parsed.topIndicators.slice(0, 3) : [],
       fromCache:      false,
@@ -169,9 +179,21 @@ async function callGemini(url, localScore, localSignals, pageTextSnippet) {
 function mergeResults(localResult, geminiResult) {
   if (!geminiResult) return localResult;
 
-  // Weighted average: 60% local (deterministic) + 40% Gemini (contextual)
-  const combined = Math.round(localResult.score * 0.6 + geminiResult.geminiScore * 0.4);
-  const finalScore = Math.max(0, Math.min(100, combined));
+  let finalScore;
+  const gScore = geminiResult.geminiScore;
+  const isVerdictSafe = (geminiResult.verdict || "").toLowerCase() === "safe";
+
+  if (localResult.score === 0 && isVerdictSafe) {
+    finalScore = 0;
+  } else if (isVerdictSafe && localResult.score <= 15) {
+    finalScore = 0;
+  } else if ((geminiResult.verdict || "").toLowerCase() === "phishing") {
+    finalScore = Math.max(75, Math.max(localResult.score, gScore));
+  } else {
+    // Weighted average: 60% deterministic local + 40% Gemini contextual AI
+    const combined = Math.round(localResult.score * 0.6 + gScore * 0.4);
+    finalScore = Math.max(0, Math.min(100, combined));
+  }
 
   const finalLevel =
     finalScore >= 70 ? "dangerous"    :
@@ -181,15 +203,15 @@ function mergeResults(localResult, geminiResult) {
   // Inject a Gemini signal into the signals list
   const geminiSignal = {
     id:       "gemini-ai",
-    weight:   geminiResult.geminiScore - 50,  // Relative contribution
-    severity: geminiResult.verdict === "Phishing"  ? "high"  :
-              geminiResult.verdict === "Suspicious" ? "med"   : "good",
+    weight:   finalScore - 50,
+    severity: isVerdictSafe ? "good" : (geminiResult.verdict === "Phishing" ? "high" : "med"),
     category: "ai",
     title:    `🤖 Gemini AI: ${geminiResult.verdict} (${geminiResult.confidence} confidence)`,
     detail:   geminiResult.reasoning || "AI-based phishing risk assessment."
   };
 
-  const mergedSignals = [geminiSignal, ...(localResult.signals || [])];
+  const filteredSignals = (localResult.signals || []).filter(s => s.id !== "gemini-ai");
+  const mergedSignals = [geminiSignal, ...filteredSignals];
 
   return {
     ...localResult,

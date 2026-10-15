@@ -845,12 +845,12 @@
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       try {
         if (!msg) return;
-        if (msg.type === "netra-get-result" || msg.type === "pl-get-result") {
+        if (msg.type === "netra-get-result") {
           sendResponse(lastResult);
-        } else if (msg.type === "netra-rescan" || msg.type === "pl-rescan") {
+        } else if (msg.type === "netra-rescan") {
           run();
           sendResponse(lastResult);
-        } else if (msg.type === "netra-gemini-update" || msg.type === "pl-gemini-update") {
+        } else if (msg.type === "netra-gemini-update") {
           // Background pushed an AI-enriched result — update local state and banner
           lastResult = msg.result;
           if (lastResult && lastResult.score >= 40) {

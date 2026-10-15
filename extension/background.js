@@ -129,7 +129,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || typeof msg !== "object") return false;
 
     // Report from content script
-    if ((msg.type === "netra-score" || msg.type === "pl-score") && sender && sender.tab) {
+    if (msg.type === "netra-score" && sender && sender.tab) {
       const tabId = sender.tab.id;
       const result = msg.result || msg;
       const score = Number(result.score) || 0;
@@ -194,14 +194,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     // Popup AI toggle preference update
-    if (msg.type === "netra-set-ai-enabled" || msg.type === "pl-set-ai-enabled") {
+    if (msg.type === "netra-set-ai-enabled") {
       chrome.storage.local.set({ netra_ai_enabled: !!msg.enabled });
       if (sendResponse) sendResponse({ ok: true });
       return true;
     }
 
     // Popup requesting cached result for active tab
-    if ((msg.type === "netra-get-cached-result" || msg.type === "pl-get-cached-result") && msg.tabId) {
+    if (msg.type === "netra-get-cached-result" && msg.tabId) {
       const cached = tabAnalysisCache.get(msg.tabId);
       if (sendResponse) sendResponse({ ok: !!cached, result: cached || null });
       return true;
