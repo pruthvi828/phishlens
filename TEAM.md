@@ -76,3 +76,31 @@ chrome.runtime.sendMessage({
 ### Popup -> Content Script / Background:
 - Sends `{ type: "pl-get-result" }` to retrieve cached tab result.
 - Displays immediate visual gauge and student protection advice.
+
+---
+
+## 4. Team Git Synchronization Protocol (Non-Destructive Pull & Push)
+
+To maintain absolute code integrity and prevent overwriting teammates' work:
+
+1. **Pull Before Starting Any Task:**
+   ```bash
+   git pull origin student-shield
+   ```
+2. **Never Overwrite Teammates' Code:**
+   - Preserve teammate implementations in their assigned modules (`engine.js`, `content.js`, `popup.html`, `demo/`).
+   - Reference teammates' functions and patterns rather than replacing them.
+   - Only edit shared integration interfaces when strictly required to wire components together.
+3. **Pre-Push Validation:**
+   - Always run the automated verification suite before committing:
+     ```bash
+     node test/e2e-test.js
+     ```
+   - All tests must pass (35/35) to ensure integrations do not crash the extension.
+4. **Push to Team Fork Branch:**
+   ```bash
+   git add .
+   git commit -m "feat(module): description of non-breaking integration"
+   git push origin student-shield
+   ```
+
