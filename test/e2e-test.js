@@ -91,6 +91,33 @@ assert(resLegitUni.isHighRisk === false, "Legitimate university is not high risk
 const resPaypal = engine.analyze('https://paypa1-secure-login.com');
 assert(resPaypal.score >= 60, `Brand typosquatting detected (Score: ${resPaypal.score})`);
 
+// Test 2F: Google Phishing Quiz URL Qualification (False-Positive Exemption & Awareness Recognition)
+const resGoogleQuiz = engine.analyze('https://phishingquiz.withgoogle.com/');
+assert(resGoogleQuiz.score < 15 && resGoogleQuiz.level === "likely safe", `Google Phishing Quiz URL qualifies as safe (Score: ${resGoogleQuiz.score})`);
+assert(resGoogleQuiz.isHighRisk === false, "Google Phishing Quiz is not high risk");
+assert(resGoogleQuiz.signals.some(s => s.id === "security-education"), "Recognized verified cybersecurity training quiz platform");
+assert(resGoogleQuiz.signals.some(s => s.id === "brand-official"), "Recognized official Google brand domain");
+
+// Test 2G: Google Phishing Quiz Full Page DOM Snapshot Qualification
+const snapGoogleQuiz = {
+  url: "https://phishingquiz.withgoogle.com/",
+  passwordFields: 1,
+  forms: [{
+    action: "",
+    method: "post",
+    hasPassword: true
+  }],
+  inputNames: ["name", "email", "password"],
+  hiddenIframes: 0,
+  externalLinks: 2,
+  totalLinks: 8,
+  text: "Question 2 of 8: You receive an email claiming unusual activity on your Google Account. Verify your password within 24 hours to prevent account deactivation. Is it Phishing or Legitimate?"
+};
+const resGoogleQuizPage = engine.analyze(snapGoogleQuiz.url, snapGoogleQuiz);
+assert(resGoogleQuizPage.score < 15 && resGoogleQuizPage.level === "likely safe", `Google Phishing Quiz entire page qualifies as safe (Score: ${resGoogleQuizPage.score})`);
+assert(resGoogleQuizPage.isHighRisk === false, "Google Phishing Quiz entire page is not high risk");
+assert(!resGoogleQuizPage.signals.some(s => s.id === "student-urgency" || s.id === "form-noaction"), "Simulated quiz question copy does not trigger false alarms on verified quiz platform");
+
 // 3. SHARED RESULT FORMAT SCHEMA VALIDATION
 console.log("\n[3] Shared Schema Conformance Validation");
 const formatted = schema.formatResult(resPagePhish);

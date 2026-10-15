@@ -19,7 +19,9 @@
     paypal: ["paypal.com", "paypal-objects.com"],
     amazon: ["amazon.com"],
     apple: ["apple.com", "icloud.com"],
-    google: ["google.com", "accounts.google.com"],
+    google: ["google.com", "accounts.google.com", "withgoogle.com", "gstatic.com",
+      "googleapis.com", "googleusercontent.com", "googleblog.com", "google.org",
+      "jigsaw.google.com"],
     microsoft: ["microsoft.com", "live.com", "outlook.com", "office.com",
       "office365.com", "office.net", "sharepoint.com", "microsoftonline.com",
       "live.net", "msft.net", "bing.com", "xbox.com"],
@@ -278,6 +280,26 @@
     );
   }
 
+  // Official interactive cybersecurity education, training & phishing simulation platforms
+  const SECURITY_AWARENESS_DOMAINS = new Set([
+    "phishingquiz.withgoogle.com",
+    "beinternetawesome.withgoogle.com",
+    "quiz.opendns.com",
+    "antiphishing.org",
+    "cisa.gov",
+    "ftc.gov"
+  ]);
+
+  function isSecurityAwarenessPlatform(host) {
+    if (!host) return false;
+    const h = host.toLowerCase();
+    if (SECURITY_AWARENESS_DOMAINS.has(h)) return true;
+    for (const d of SECURITY_AWARENESS_DOMAINS) {
+      if (h === d || h.endsWith("." + d)) return true;
+    }
+    return false;
+  }
+
   function signal(id, weight, severity, title, detail, category = "security") {
     return { id, weight, severity, category, title, detail };
   }
@@ -500,6 +522,12 @@
         signals.push(signal("brand-official", -20, "good",
           "Official brand domain", "Hostname belongs to a known verified service."));
       }
+      if (isSecurityAwarenessPlatform(host)) {
+        signals.push(signal("security-education", -25, "good",
+          "Verified Cybersecurity Training / Awareness Platform",
+          "Domain is an official educational security awareness testbed (e.g. Google Phishing Quiz).",
+          "security"));
+      }
 
       return finalize(signals, input, url);
     } catch (err) {
@@ -517,13 +545,18 @@
       try { pageHost = new URL(snap.url).hostname.toLowerCase(); } catch (e) {}
 
       const isEdu = isGenuineEduDomain(pageHost);
+      const isBrand = isBrandDomain(pageHost);
+      const isSecEdu = isSecurityAwarenessPlatform(pageHost);
+      const isTrusted = isEdu || isBrand || isSecEdu;
 
       for (const f of snap.forms || []) {
         if (!f.hasPassword) continue;
         if (!f.action) {
-          signals.push(signal("form-noaction", 15, "med",
-            "Password form with no declared destination",
-            "The submit target is set dynamically — a common credential-harvest pattern."));
+          if (!isTrusted) {
+            signals.push(signal("form-noaction", 15, "med",
+              "Password form with no declared destination",
+              "The submit target is set dynamically — a common credential-harvest pattern."));
+          }
           continue;
         }
         let a;
@@ -534,7 +567,8 @@
             "Anything you type here is sent unencrypted over the network.",
             "credential"));
         } else if (a.hostname.toLowerCase() !== pageHost &&
-                   registrable(a.hostname.toLowerCase()) !== registrable(pageHost)) {
+                   registrable(a.hostname.toLowerCase()) !== registrable(pageHost) &&
+                   !(isBrand && isBrandDomain(a.hostname.toLowerCase()))) {
           signals.push(signal("form-xdomain", 45, "high",
             `Password form posts to an external domain (${a.hostname})`,
             "Legitimate campus logins almost never transmit student passwords cross-site.",
@@ -545,7 +579,7 @@
       // Student ID / University credential harvesting check
       const studentInputTerms = (snap.inputNames || []).filter((n) =>
         /student.?id|studentid|campus.?id|netid|banner.?id|matriculation|student.?email|university.?id/i.test(n));
-      if (studentInputTerms.length && !isEdu && (snap.passwordFields || 0) > 0) {
+      if (studentInputTerms.length && !isEdu && !isSecEdu && (snap.passwordFields || 0) > 0) {
         signals.push(signal("student-portal-lookalike", 45, "high",
           `Harvesting Student Credentials (${studentInputTerms.slice(0, 2).join(", ")})`,
           "A password form requesting student ID / university credentials was found on a non-educational domain.",
@@ -555,7 +589,7 @@
       // General sensitive fields
       const sensitive = (snap.inputNames || []).filter((n) =>
         /ssn|social.?sec|cvv|cvc|card.?num|otp|one.?time|pin|seed.?phrase|private.?key|routing.?num|bank.?account/i.test(n));
-      if (sensitive.length) {
+      if (sensitive.length && !isTrusted) {
         signals.push(signal("sensitive-fields", 30, "high",
           `Page asks for sensitive financial/identity data (${sensitive.slice(0, 3).join(", ")})`,
           "Direct requests for SSNs, bank accounts, or OTPs deserve high scrutiny.",
@@ -563,35 +597,37 @@
       }
 
       // Hidden iframes
-      if ((snap.hiddenIframes || 0) > 0) {
+      if ((snap.hiddenIframes || 0) > 0 && !isTrusted) {
         signals.push(signal("hidden-iframe", 20, "med",
           `${snap.hiddenIframes} hidden iframe(s)`,
           "Invisible frames are used for clickjacking and covert redirects."));
       }
 
       // External links ratio
-      if ((snap.totalLinks || 0) >= 10 && (snap.externalLinks || 0) / snap.totalLinks > 0.9) {
+      if ((snap.totalLinks || 0) >= 10 && (snap.externalLinks || 0) / snap.totalLinks > 0.9 && !isTrusted) {
         signals.push(signal("ext-links", 10, "low",
           "Nearly all links point off-site",
           "Throwaway phishing pages often link out to genuine resources to mimic legitimacy."));
       }
 
       // Text analysis: Urgency & Student Panic
-      const text = (snap.text || "").toLowerCase();
-      const studentUrgentHits = STUDENT_URGENCY_PHRASES.filter((p) => text.includes(p));
-      if (studentUrgentHits.length) {
-        signals.push(signal("student-urgency", 30, "high",
-          `Student panic language detected ("${studentUrgentHits[0]}")`,
-          "Threats of student account deactivation or loss of campus access are primary student phishing levers.",
-          "urgency"));
-      }
+      if (!isTrusted) {
+        const text = (snap.text || "").toLowerCase();
+        const studentUrgentHits = STUDENT_URGENCY_PHRASES.filter((p) => text.includes(p));
+        if (studentUrgentHits.length) {
+          signals.push(signal("student-urgency", 30, "high",
+            `Student panic language detected ("${studentUrgentHits[0]}")`,
+            "Threats of student account deactivation or loss of campus access are primary student phishing levers.",
+            "urgency"));
+        }
 
-      const hits = URGENCY_PHRASES.filter((p) => text.includes(p));
-      if (hits.length && !studentUrgentHits.length) {
-        signals.push(signal("urgency", Math.min(30, 8 + hits.length * 5), "med",
-          `Pressure language detected (${hits.length} phrases)`,
-          `e.g. "${hits[0]}" — urgency and fear are core social-engineering levers.`,
-          "urgency"));
+        const hits = URGENCY_PHRASES.filter((p) => text.includes(p));
+        if (hits.length && !studentUrgentHits.length) {
+          signals.push(signal("urgency", Math.min(30, 8 + hits.length * 5), "med",
+            `Pressure language detected (${hits.length} phrases)`,
+            `e.g. "${hits[0]}" — urgency and fear are core social-engineering levers.`,
+            "urgency"));
+        }
       }
 
       return signals;
@@ -624,7 +660,10 @@
     return score >= 40 ? "suspicious_structure" : "caution_general";
   }
 
-  function generateSummary(level, threatCategory, host, topSignal) {
+  function generateSummary(level, threatCategory, host, topSignal, isSecEdu) {
+    if (isSecEdu) {
+      return "Verified cybersecurity awareness & phishing simulation quiz (official educational resource).";
+    }
     if (level === "likely safe") {
       return "No suspicious phishing indicators detected. Site appears standard.";
     }
@@ -644,7 +683,15 @@
     }
   }
 
-  function getStudentAdvice(threatCategory, host) {
+  function getStudentAdvice(threatCategory, host, isSecEdu) {
+    if (isSecEdu) {
+      return [
+        "This is an official interactive cybersecurity quiz. Practice identifying phishing indicators safely!",
+        "Notice how simulated emails in the quiz use deceptive subdomains, fake senders, or lookalike links.",
+        "Remember: real campus IT and banks will never send emails asking you to confirm passwords via link."
+      ];
+    }
+
     const defaultAdvice = [
       "Always check the browser address bar to confirm the domain ends with your university's genuine .edu address.",
       "Campus IT and student services will never email asking you to verify your password or Duo MFA codes.",
@@ -680,13 +727,18 @@
     const sortedSignals = signals.sort((a, b) => b.weight - a.weight);
     const threatCategory = categorizeThreat(sortedSignals, score);
     const topSignal = sortedSignals.find((s) => s.weight > 0) || sortedSignals[0];
-    const summary = generateSummary(level, threatCategory, host, topSignal);
+    const isSecEdu = sortedSignals.some((s) => s.id === "security-education");
+    const summary = generateSummary(level, threatCategory, host, topSignal, isSecEdu);
 
     const isStudentTargeted = threatCategory.startsWith("student_") ||
       threatCategory === "financial_aid_scam" ||
+      isSecEdu ||
       sortedSignals.some((s) => s.id.startsWith("student-"));
 
     const detectedTargets = [];
+    if (isSecEdu) {
+      detectedTargets.push("Cybersecurity Training & Phishing Awareness Quiz");
+    }
     if (sortedSignals.some((s) => s.id === "student-edu-spoof" || s.id === "student-portal-lookalike")) {
       detectedTargets.push("University SSO / Campus Portal");
     }
@@ -714,7 +766,7 @@
       studentProtection: {
         isStudentTargeted,
         detectedTargets,
-        advice: getStudentAdvice(threatCategory, host)
+        advice: getStudentAdvice(threatCategory, host, isSecEdu)
       },
       error: null
     };

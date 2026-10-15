@@ -1,8 +1,11 @@
 /**
- * PhishLens Student Shield — Background Service Worker (Manifest V3)
+ * NETRA — Background Service Worker (Manifest V3)
  * Manages per-tab badges, desktop security notifications, threat deduplication,
- * and cached tab analysis results with full error boundaries.
+ * Gemini AI enrichment, and cached tab analysis results with full error boundaries.
  */
+
+// Load Gemini AI analyzer module into service worker scope
+try { importScripts("gemini-analyzer.js"); } catch (e) { console.warn("[NETRA] Gemini module unavailable:", e.message); }
 
 const COLORS = {
   dangerous: "#dc2626",      // Red
@@ -125,20 +128,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const score = Number(result.score) || 0;
       const level = result.level || "unknown";
 
-      // Cache the result for this tab
+      // Cache the local result immediately for instant popup display
       tabAnalysisCache.set(tabId, result);
 
-      // 1. Update extension action badge
+      // 1. Update extension action badge with local score (instant)
       const badgeText = score >= 40 ? "!" : score > 0 ? String(score) : "";
       chrome.action.setBadgeText({ tabId, text: badgeText });
       chrome.action.setBadgeBackgroundColor({
         tabId,
         color: COLORS[level] || COLORS.unknown
       });
-
       chrome.action.setTitle({
         tabId,
-        title: `Utkarsh Ki Fish: ${score}/100 — ${level.toUpperCase()}\n${result.summary || ""}`
+        title: `NETRA: ${score}/100 — ${level.toUpperCase()}\n${result.summary || ""}`
       });
 
       // 2. High-risk notification trigger (score >= 70 or dangerous)
@@ -147,6 +149,45 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
 
       if (sendResponse) sendResponse({ ok: true, cached: true });
+
+      // 3. Async Gemini AI enrichment — non-blocking, updates cache when done
+      if (globalThis.NETRA_Gemini && result.url && result.url.startsWith("http")) {
+        const pageText  = msg.pageText  || "";
+        const localSigs = result.signals || [];
+
+        NETRA_Gemini.callGemini(result.url, score, localSigs, pageText)
+          .then((geminiResult) => {
+            if (!geminiResult) return; // API failed gracefully — keep local result
+
+            const enriched = NETRA_Gemini.mergeResults(result, geminiResult);
+            tabAnalysisCache.set(tabId, enriched);
+
+            const eScore = enriched.score;
+            const eLevel = enriched.level;
+
+            // Update badge with AI-merged score
+            const eBadge = eScore >= 40 ? "!" : eScore > 0 ? String(eScore) : "";
+            chrome.action.setBadgeText({ tabId, text: eBadge });
+            chrome.action.setBadgeBackgroundColor({ tabId, color: COLORS[eLevel] || COLORS.unknown });
+            chrome.action.setTitle({
+              tabId,
+              title: `NETRA AI: ${eScore}/100 — ${eLevel.toUpperCase()}\n[Gemini: ${geminiResult.verdict}]`
+            });
+
+            // Re-notify if AI bumped a page into dangerous territory
+            if (eScore >= 70 && score < 70) {
+              triggerDesktopNotification(tabId, enriched);
+            }
+
+            // Push enriched result to the popup (via runtime broadcast) and content script (banner)
+            chrome.runtime.sendMessage({ type: "pl-gemini-update", result: enriched, tabId })
+              .catch(() => {}); // Popup may be closed — ignore
+            chrome.tabs.sendMessage(tabId, { type: "pl-gemini-update", result: enriched })
+              .catch(() => {}); // Content script error — ignore
+          })
+          .catch((err) => console.warn("[NETRA-Gemini] enrichment error:", err.message));
+      }
+
       return true;
     }
 

@@ -1,4 +1,4 @@
-# PhishLens Student Shield — Hackathon Team Matrix & Shared Specs
+# NETRA Student Shield — Hackathon Team Matrix & Shared Specs
 
 ## 1. Team Ownership & Responsibilities
 

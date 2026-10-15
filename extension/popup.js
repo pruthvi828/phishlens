@@ -96,6 +96,53 @@ function paintResult(result) {
     studentBox.style.display = "none";
   }
 
+  // Gemini AI Panel
+  const aiPanel      = document.getElementById("ai-panel");
+  const aiShimmer    = document.getElementById("ai-shimmer");
+  const aiContent    = document.getElementById("ai-content");
+  const aiBadge      = document.getElementById("ai-badge");
+  const aiConfidence = document.getElementById("ai-confidence");
+  const aiReasoning  = document.getElementById("ai-reasoning");
+  const aiIndicators = document.getElementById("ai-indicators");
+
+  if (aiPanel) {
+    if (result.geminiResult) {
+      aiPanel.classList.add("visible");
+      if (aiShimmer) aiShimmer.style.display = "none";
+      if (aiContent) aiContent.style.display = "block";
+
+      const g = result.geminiResult;
+      const vClass = (g.verdict || "").toLowerCase();
+      if (aiBadge) {
+        aiBadge.textContent = `${g.verdict} (${g.geminiScore}/100)`;
+        aiBadge.className = `ai-badge ${vClass === "phishing" ? "phishing" : vClass === "safe" ? "safe" : "suspicious"}`;
+      }
+      if (aiConfidence) {
+        aiConfidence.textContent = `${g.confidence || "High"} confidence`;
+      }
+      if (aiReasoning) {
+        aiReasoning.textContent = g.reasoning || "Analyzed by Google Gemini AI.";
+      }
+      if (aiIndicators) {
+        aiIndicators.innerHTML = "";
+        const chips = g.topIndicators || [];
+        for (const chip of chips) {
+          const span = document.createElement("span");
+          span.className = "ai-chip";
+          span.textContent = chip;
+          aiIndicators.appendChild(span);
+        }
+      }
+    } else if (result.url && result.url.startsWith("http")) {
+      // Waiting for Gemini background enrichment
+      aiPanel.classList.add("visible");
+      if (aiShimmer) aiShimmer.style.display = "flex";
+      if (aiContent) aiContent.style.display = "none";
+    } else {
+      aiPanel.classList.remove("visible");
+    }
+  }
+
   // Signals
   const signals = result.signals || [];
   if (sigCount) sigCount.textContent = signals.length > 0 ? `${signals.length} found` : "";
@@ -234,6 +281,22 @@ document.getElementById("url-input").addEventListener("keydown", (e) => {
     document.getElementById("btn-analyze").click();
   }
 });
+
+// Listen for live Gemini AI updates pushed from background service worker
+try {
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg && msg.type === "pl-gemini-update" && msg.result) {
+      // Only update if message is for current active tab
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab && tab.id === msg.tabId) {
+          paintResult(msg.result);
+        }
+      });
+    }
+  });
+} catch (e) {
+  console.warn("Could not register live popup update listener:", e);
+}
 
 // Boot
 loadTabResult();

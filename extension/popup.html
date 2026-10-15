@@ -256,6 +256,84 @@
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
+  /* ── AI PANEL ── */
+  .ai-panel {
+    margin: 8px 12px 6px;
+    background: linear-gradient(135deg, rgba(0,240,200,0.06), rgba(99,102,241,0.06));
+    border: 1px solid rgba(0,240,200,0.2);
+    border-radius: 8px;
+    padding: 9px 12px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .ai-panel.visible { display: block; }
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+  }
+  .ai-label {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    flex: 1;
+  }
+  .ai-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .ai-badge.safe       { background: rgba(0,232,122,0.15); color: var(--green); border: 1px solid rgba(0,232,122,0.3); }
+  .ai-badge.suspicious { background: rgba(255,123,0,0.15);  color: var(--orange); border: 1px solid rgba(255,123,0,0.3); }
+  .ai-badge.phishing   { background: rgba(255,59,92,0.15);  color: var(--red); border: 1px solid rgba(255,59,92,0.3); }
+  .ai-confidence {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ai-reasoning {
+    font-size: 11px;
+    color: #c4d7e5;
+    line-height: 1.45;
+    margin-bottom: 6px;
+  }
+  .ai-indicators {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ai-chip {
+    font-size: 9.5px;
+    background: rgba(0,240,200,0.07);
+    border: 1px solid rgba(0,240,200,0.18);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--text);
+  }
+  .ai-shimmer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--cyan);
+    padding: 3px 0;
+  }
+  .ai-shimmer::before {
+    content: "";
+    width: 12px; height: 12px;
+    border: 2px solid rgba(0,240,200,0.3);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   /* ── ANALYZER ── */
   .analyzer-section {
     padding: 4px 12px 12px;
@@ -369,6 +447,20 @@
     <b>🎓 Student Alert</b>
     <div id="student-advice"></div>
   </div>
+
+  <!-- Gemini AI Verdict Panel -->
+  <div class="ai-panel" id="ai-panel">
+    <div class="ai-shimmer" id="ai-shimmer">Gemini AI is analyzing this page…</div>
+    <div id="ai-content" style="display:none;">
+      <div class="ai-header">
+        <span class="ai-label">🤖 Gemini AI Verdict</span>
+        <span class="ai-badge" id="ai-badge"></span>
+        <span class="ai-confidence" id="ai-confidence"></span>
+      </div>
+      <div class="ai-reasoning" id="ai-reasoning"></div>
+      <div class="ai-indicators" id="ai-indicators"></div>
+    </div>
+  </div>
 </div>
 
 <div class="section-header">
@@ -394,7 +486,7 @@
   <div id="analyze-res"></div>
 </div>
 
-<footer>All analysis is 100% local · Zero data uploaded · NETRA v3.0</footer>
+<footer>Local heuristics + Gemini AI · No credentials stored · NETRA v3.0</footer>
 
 <script src="engine.js"></script>
 <script src="popup.js"></script>
