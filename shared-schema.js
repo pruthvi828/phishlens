@@ -1,5 +1,5 @@
-/**
- * PhishLens Student Shield — Shared Result Format & Validation
+﻿/**
+ * NETRA Shield — Shared Result Format & Validation
  * Standard schema shared across engine.js, content.js, background.js, and popup.js.
  */
 (function (global) {
@@ -166,6 +166,6 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = SharedSchema;
   } else {
-    global.PhishLensSchema = SharedSchema;
+    global.NETRASchema = SharedSchema;
   }
 })(typeof window !== "undefined" ? window : globalThis);

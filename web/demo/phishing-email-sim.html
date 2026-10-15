@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Webmail — Inbox (1 Unread)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --sidebar: #1e293b;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --blue: #38bdf8;
+    --rose: #f43f5e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Webmail Navbar */
+  header {
+    background: #0b1120;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mail-logo {
+    font-size: 20px;
+    background: rgba(56,189,248,0.15);
+    border: 1px solid rgba(56,189,248,0.3);
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .user-badge {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--sidebar);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  /* Main Workspace */
+  .workspace {
+    flex: 1;
+    display: flex;
+  }
+  .sidebar {
+    width: 220px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .nav-item.active {
+    background: rgba(56,189,248,0.15);
+    color: var(--blue);
+  }
+  .badge-unread {
+    background: var(--rose);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+
+  /* Mail Reading Pane */
+  .reading-pane {
+    flex: 1;
+    padding: 24px 32px;
+    max-width: 900px;
+    overflow-y: auto;
+  }
+
+  .mail-card {
+    background: #1e293b;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+
+  .mail-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #182234;
+  }
+  .mail-subject {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .urgency-tag {
+    background: rgba(244,63,94,0.15);
+    border: 1px solid rgba(244,63,94,0.3);
+    color: var(--rose);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .sender-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f43f5e, #be123c);
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sender-meta {
+    flex: 1;
+  }
+  .sender-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .sender-address {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: monospace;
+    margin-top: 2px;
+  }
+  .mail-time {
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  /* Mail Body */
+  .mail-body {
+    padding: 28px 24px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #cbd5e1;
+  }
+  .mail-body p {
+    margin-bottom: 16px;
+  }
+  .mail-body b {
+    color: #fff;
+  }
+
+  .action-box {
+    margin: 24px 0;
+    padding: 20px;
+    background: rgba(15,23,42,0.6);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    text-align: center;
+  }
+  .btn-verify {
+    display: inline-block;
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(2,132,199,0.3);
+    transition: all 0.2s;
+  }
+  .btn-verify:hover {
+    filter: brightness(1.1);
+  }
+
+  .mail-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: #182234;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-bar">
+    <div class="mail-logo">📬</div>
+    <div>
+      <div class="brand-title">State University Webmail</div>
+      <div style="font-size:11px;color:#94a3b8;">Student Portal &amp; Communication Center</div>
+    </div>
+  </div>
+  <div class="user-badge">student@university.edu</div>
+</header>
+
+<div class="workspace">
+  <div class="sidebar">
+    <div class="nav-item active">
+      <span>📥 Inbox</span>
+      <span class="badge-unread">1</span>
+    </div>
+    <div class="nav-item">
+      <span>⭐ Starred</span>
+    </div>
+    <div class="nav-item">
+      <span>📤 Sent</span>
+    </div>
+    <div class="nav-item">
+      <span>🗑️ Trash</span>
+    </div>
+  </div>
+
+  <div class="reading-pane">
+    <!-- Active Email Container marked with standard webmail attributes for NETRA scanner -->
+    <div class="mail-card email-view" data-netra-email="true">
+      <div class="mail-header">
+        <div class="mail-subject">
+          <span class="email-subject" data-subject="URGENT: Student Account Suspension &amp; Financial Aid Hold">URGENT: Student Account Suspension &amp; Financial Aid Hold</span>
+          <span class="urgency-tag">High Priority</span>
+        </div>
+
+        <div class="sender-row">
+          <div class="avatar">IT</div>
+          <div class="sender-meta">
+            <div class="sender-name">Office of Student Financial Aid &amp; Campus IT</div>
+            <div class="sender-address email-from" data-sender="Office of Student Financial Aid <bursar-verify@state-university-support.top>">
+              bursar-verify@state-university-support.top
+            </div>
+          </div>
+          <div class="mail-time">Today, 10:14 AM</div>
+        </div>
+      </div>
+
+      <!-- Message Body -->
+      <div class="mail-body email-body" data-body="true">
+        <p>Dear Student,</p>
+
+        <p>Our automated audit detected <b>unauthorized sign-in attempts</b> and pending financial aid documentation for your campus profile. Failure to complete two-step re-verification within <b>24 hours</b> will result in immediate <b>account suspension</b>, cancellation of spring tuition bursaries, and revocation of university SSO credentials.</p>
+
+        <p>Please log in immediately using your Student ID and university password to verify your account and release the billing hold:</p>
+
+        <div class="action-box">
+          <a class="btn-verify" href="http://portal-verify.university-edu.login-auth.top/student-aid-confirm">
+            Verify Student Account &amp; Financial Aid Now →
+          </a>
+          <div style="margin-top:8px;font-size:11.5px;color:#94a3b8;">
+            Direct SSO Link: <a href="http://portal-verify.university-edu.login-auth.top/student-aid-confirm" style="color:#38bdf8;">http://university.edu/student-sso-verify</a>
+          </div>
+        </div>
+
+        <p>If you fail to act within the deadline, access to Canvas LMS, campus email, and course registration will be terminated.</p>
+
+        <p style="margin-top:24px;">Sincerely,<br>
+        <b>University Registrar &amp; Campus IT Services</b></p>
+      </div>
+
+      <div class="mail-footer">
+        Automated Security Notification &middot; State University Helpdesk &middot; Reference ID: #SEC-98421-FA
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

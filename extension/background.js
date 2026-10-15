@@ -23,7 +23,7 @@ const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 // Notification ID to tab metadata map for click-to-focus
 const activeNotifications = new Map();
 
-// Tab analysis cache: tabId -> PhishLensResult
+// Tab analysis cache: tabId -> NETRAResult
 const tabAnalysisCache = new Map();
 
 /**
@@ -77,18 +77,25 @@ function triggerDesktopNotification(tabId, result) {
       return;
     }
 
-    const notifId = `pl-shield-${tabId}-${Date.now()}`;
+    const notifId = `netra-shield-${tabId}-${Date.now()}`;
     const iconUrl = chrome.runtime.getURL("icons/icon128.png");
 
-    let alertTitle = "🚨 Utkarsh Ki Fish Alert";
-    if (result.threatCategory === "student_portal_spoof") {
-      alertTitle = "🚨 Utkarsh Ki Fish: Fake Campus Portal!";
+    let alertTitle = "🚨 NETRA Threat Alert";
+    if (result.type === "email" || result.threatCategory === "student_email_phish") {
+      alertTitle = "🚨 NETRA: Phishing Email Detected!";
+      if (result.studentProtection && result.studentProtection.isStudentTargeted) {
+        alertTitle = "🚨 NETRA: University Phishing Email!";
+      }
+    } else if (result.threatCategory === "student_portal_spoof") {
+      alertTitle = "🚨 NETRA: Fake Campus Portal!";
     } else if (result.threatCategory === "financial_aid_scam") {
-      alertTitle = "🚨 Utkarsh Ki Fish: Financial Aid Scam!";
+      alertTitle = "🚨 NETRA: Financial Aid Scam!";
     }
 
     const message = `[Risk ${score}/100 - ${result.level.toUpperCase()}] ${result.summary || "Suspicious phishing threat detected."}`;
-    const context = `Host: ${host} • Never input your Student ID or SSO passwords.`;
+    const context = result.type === "email"
+      ? `Sender: ${result.from || "Unknown"} • Do not click links or download attachments.`
+      : `Host: ${host} • Never input your Student ID or SSO passwords.`;
 
     chrome.notifications.create(
       notifId,
@@ -110,7 +117,7 @@ function triggerDesktopNotification(tabId, result) {
       }
     );
   } catch (err) {
-    console.error("PhishLens notification error caught gracefully:", err);
+    console.error("NETRA notification error caught gracefully:", err);
   }
 }
 
@@ -122,7 +129,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || typeof msg !== "object") return false;
 
     // Report from content script
-    if (msg.type === "pl-score" && sender && sender.tab) {
+    if ((msg.type === "netra-score" || msg.type === "pl-score") && sender && sender.tab) {
       const tabId = sender.tab.id;
       const result = msg.result || msg;
       const score = Number(result.score) || 0;
@@ -140,7 +147,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       });
       chrome.action.setTitle({
         tabId,
-        title: `NETRA: ${score}/100 — ${level.toUpperCase()}\n${result.summary || ""}`
+        title: result.type === "email"
+          ? `NETRA Email Shield: ${score}/100 — ${level.toUpperCase()}\nFrom: ${result.from || "unknown"}\n${result.summary || ""}`
+          : `NETRA: ${score}/100 — ${level.toUpperCase()}\n${result.summary || ""}`
       });
 
       // 2. High-risk notification trigger (score >= 70 or dangerous)
@@ -150,55 +159,55 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       if (sendResponse) sendResponse({ ok: true, cached: true });
 
-      // 3. Async Gemini AI enrichment — non-blocking, updates cache when done
+      // 3. Async Gemini AI enrichment — non-blocking, checks user AI preference
       if (globalThis.NETRA_Gemini && result.url && result.url.startsWith("http")) {
-        const pageText  = msg.pageText  || "";
-        const localSigs = result.signals || [];
+        // Read AI-enabled preference from storage before calling API
+        chrome.storage.local.get(["netra_ai_enabled"], (prefs) => {
+          const aiOn = prefs.netra_ai_enabled !== false; // default ON
+          if (!aiOn) return; // User disabled AI — respect privacy
 
-        NETRA_Gemini.callGemini(result.url, score, localSigs, pageText)
-          .then((geminiResult) => {
-            if (!geminiResult) return; // API failed gracefully — keep local result
+          const pageText  = msg.pageText  || "";
+          const localSigs = result.signals || [];
 
-            const enriched = NETRA_Gemini.mergeResults(result, geminiResult);
-            tabAnalysisCache.set(tabId, enriched);
-
-            const eScore = enriched.score;
-            const eLevel = enriched.level;
-
-            // Update badge with AI-merged score
-            const eBadge = eScore >= 40 ? "!" : eScore > 0 ? String(eScore) : "";
-            chrome.action.setBadgeText({ tabId, text: eBadge });
-            chrome.action.setBadgeBackgroundColor({ tabId, color: COLORS[eLevel] || COLORS.unknown });
-            chrome.action.setTitle({
-              tabId,
-              title: `NETRA AI: ${eScore}/100 — ${eLevel.toUpperCase()}\n[Gemini: ${geminiResult.verdict}]`
-            });
-
-            // Re-notify if AI bumped a page into dangerous territory
-            if (eScore >= 70 && score < 70) {
-              triggerDesktopNotification(tabId, enriched);
-            }
-
-            // Push enriched result to the popup (via runtime broadcast) and content script (banner)
-            chrome.runtime.sendMessage({ type: "pl-gemini-update", result: enriched, tabId })
-              .catch(() => {}); // Popup may be closed — ignore
-            chrome.tabs.sendMessage(tabId, { type: "pl-gemini-update", result: enriched })
-              .catch(() => {}); // Content script error — ignore
-          })
-          .catch((err) => console.warn("[NETRA-Gemini] enrichment error:", err.message));
+          NETRA_Gemini.callGemini(result.url, score, localSigs, pageText)
+            .then((geminiResult) => {
+              if (!geminiResult) return;
+              const enriched = NETRA_Gemini.mergeResults(result, geminiResult);
+              tabAnalysisCache.set(tabId, enriched);
+              const eScore = enriched.score;
+              const eLevel = enriched.level;
+              const eBadge = eScore >= 40 ? "!" : eScore > 0 ? String(eScore) : "";
+              chrome.action.setBadgeText({ tabId, text: eBadge });
+              chrome.action.setBadgeBackgroundColor({ tabId, color: COLORS[eLevel] || COLORS.unknown });
+              chrome.action.setTitle({ tabId,
+                title: `NETRA AI: ${eScore}/100 — ${eLevel.toUpperCase()}\n[Gemini: ${geminiResult.verdict}]`
+              });
+              if (eScore >= 70 && score < 70) triggerDesktopNotification(tabId, enriched);
+              chrome.runtime.sendMessage({ type: "netra-gemini-update", result: enriched, tabId }).catch(() => {});
+              chrome.tabs.sendMessage(tabId, { type: "netra-gemini-update", result: enriched }).catch(() => {});
+            })
+            .catch((err) => console.warn("[NETRA-Gemini] error:", err.message));
+        }); // end storage.local.get
       }
 
       return true;
     }
 
+    // Popup AI toggle preference update
+    if (msg.type === "netra-set-ai-enabled" || msg.type === "pl-set-ai-enabled") {
+      chrome.storage.local.set({ netra_ai_enabled: !!msg.enabled });
+      if (sendResponse) sendResponse({ ok: true });
+      return true;
+    }
+
     // Popup requesting cached result for active tab
-    if (msg.type === "pl-get-cached-result" && msg.tabId) {
+    if ((msg.type === "netra-get-cached-result" || msg.type === "pl-get-cached-result") && msg.tabId) {
       const cached = tabAnalysisCache.get(msg.tabId);
       if (sendResponse) sendResponse({ ok: !!cached, result: cached || null });
       return true;
     }
   } catch (err) {
-    console.error("PhishLens background onMessage error caught gracefully:", err);
+    console.error("NETRA background onMessage error caught gracefully:", err);
     if (sendResponse) sendResponse({ ok: false, error: err.message });
   }
   return true;

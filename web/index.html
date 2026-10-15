@@ -480,10 +480,36 @@
           <p>Fires deduplicated, high-priority desktop notifications on dangerous pages with smart cooldowns.</p>
         </div>
         <div class="feature">
-          <div class="feature-icon">🧠</div>
-          <b>Typosquatting Engine</b>
-          <p>Levenshtein distance scoring against 60+ top brands. Catches paypa1, g00gle, amaz0n and hundreds more.</p>
+          <div class="feature-icon">📧</div>
+          <b>Email Phishing Shield</b>
+          <p>Real-time detection on Gmail, Outlook Web, and campus webmail. Flags spoofed sender names, urgency lures, and highlights malicious email links.</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE DEMO SCENARIOS -->
+  <div class="section">
+    <div class="section-card">
+      <h2>🧪 Live Threat Simulation Suites</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Test NETRA's in-page detection banner, link highlighting, and popup inspector across simulated attacks:</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+        <a href="demo/phishing-email-sim.html" target="_blank" style="text-decoration:none;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);border-radius:10px;padding:14px;color:#fff;display:block;transition:all 0.2s;">
+          <div style="font-size:13px;font-weight:700;color:#f43f5e;margin-bottom:4px;">🚨 Phishing Webmail Simulator →</div>
+          <div style="font-size:11.5px;color:#cbd5e1;">Spoofed University Financial Aid &amp; Account Suspension email with fake links.</div>
+        </a>
+        <a href="demo/student-portal-phish.html" target="_blank" style="text-decoration:none;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:10px;padding:14px;color:#fff;display:block;transition:all 0.2s;">
+          <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:4px;">🎓 Fake Campus SSO Portal →</div>
+          <div style="font-size:11.5px;color:#cbd5e1;">Impersonates university login with unencrypted credential harvesting.</div>
+        </a>
+        <a href="demo/campus-aid-scam.html" target="_blank" style="text-decoration:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:14px;color:#fff;display:block;transition:all 0.2s;">
+          <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:4px;">💸 Student Financial Aid Scam →</div>
+          <div style="font-size:11.5px;color:#cbd5e1;">Bursary and FAFSA relief lure designed to steal banking credentials.</div>
+        </a>
+        <a href="demo/paypal-verify.html" target="_blank" style="text-decoration:none;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:14px;color:#fff;display:block;transition:all 0.2s;">
+          <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:4px;">💳 Brand Typosquat Clone →</div>
+          <div style="font-size:11.5px;color:#cbd5e1;">Levenshtein typosquat targeting commercial payment providers.</div>
+        </a>
       </div>
     </div>
   </div>
@@ -491,12 +517,12 @@
   <!-- INSTALL -->
   <div class="section">
     <div class="section-card">
-      <h2>🚀 Install in Chrome</h2>
+      <h2>🚀 Install in Chrome / Firefox</h2>
       <ol class="install-steps">
         <li>Open Chrome and navigate to <code>chrome://extensions</code></li>
         <li>Toggle <b>Developer mode</b> ON in the top-right corner.</li>
         <li>Click <b>Load unpacked</b> and select the <code>extension/</code> folder from this repo.</li>
-        <li>The NETRA 👁 icon appears in your toolbar — click it to see the live threat dashboard.</li>
+        <li>Open any email in Gmail or our Webmail Simulator — NETRA automatically inspects and flags phishing threats!</li>
       </ol>
     </div>
   </div>
@@ -549,7 +575,7 @@ for (const s of SAMPLES) {
 function run() {
   const v = document.getElementById("u").value.trim();
   if (!v) return;
-  const r = window.PhishLens.analyzeUrl(v);
+  const r = window.NETRA.analyzeUrl(v);
   const c = COLORS[r.level] || COLORS.unknown;
   const out = document.getElementById("out");
   out.style.display = "block";

@@ -1,5 +1,5 @@
-#!/usr/bin/env node
-// PhishLens ↔ Figma bridge server (stdlib only).
+﻿#!/usr/bin/env node
+// NETRA ↔ Figma bridge server (stdlib only).
 // The Figma plugin long-polls GET /poll for {id, code}, executes it against the
 // Plugin API, then POSTs /result {id, ok, result|error}.
 // Usage:

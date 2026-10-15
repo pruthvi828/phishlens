@@ -1,8 +1,8 @@
-# TLN Hackathon 2026 — PhishLens (Speedrun)
+﻿# TLN Hackathon 2026 — NETRA (Speedrun)
 
 ## Mission
 
-Build **PhishLens**, a client-side phishing-protection toolkit, for the
+Build **NETRA**, a client-side phishing-protection toolkit, for the
 [TLN Cybersecurity Challenge 2026](https://tln-cybersecurity-challenge.devpost.com/).
 
 - **Hard deadline: 2026-09-20 10:00 EDT = 14:00 UTC = 22:00 +08 (local)**
@@ -15,7 +15,7 @@ Build **PhishLens**, a client-side phishing-protection toolkit, for the
 
 - [x] Working prototype + link judges can test (live web demo + load-unpacked ext)
 - [x] Project name, description, technologies used (README.md = paste-ready)
-- [x] Demo link: https://georgefifth.github.io/phishlens/ + https://github.com/Georgefifth/phishlens
+- [x] Demo link: https://georgefifth.github.io/netra/ + https://github.com/Georgefifth/netra
 - [ ] Video <5min (skipped — user opted for live demo)
 - [x] AI disclosure: built with Devin (AI pair programmer) — disclosed
 - [x] Cover + slides: Figma file https://www.figma.com/design/5uARhJgnKzq2BnITnskraX
@@ -88,8 +88,8 @@ TLN/
 ## Deploy
 
 ```bash
-gh repo create phishlens --public --source . --push
-gh api repos/Georgefifth/phishlens/pages -f build_type=workflow  # or branch pages
+gh repo create netra --public --source . --push
+gh api repos/Georgefifth/netra/pages -f build_type=workflow  # or branch pages
 # Pages source: main /web (or gh-pages branch)
 ```
 

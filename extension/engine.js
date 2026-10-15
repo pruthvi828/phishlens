@@ -1,5 +1,5 @@
 /*
- * PhishLens Student Shield — client-side phishing risk analysis engine.
+ * NETRA Shield — client-side phishing risk analysis engine.
  * Pure JavaScript, zero dependencies, zero network calls.
  * Runs identically inside the browser extension (content script / popup)
  * and the web demo page. Also loadable in Node for testing.
@@ -92,7 +92,9 @@
     "harvard", "mit", "stanford", "berkeley", "oxford", "cambridge",
     "columbia", "nyu", "ucla", "cornell", "princeton", "yale",
     "campus", "university", "college", "faculty", "student", "alumni",
-    "registrar", "bursar", "blackboard", "canvas", "brightspace"
+    "registrar", "bursar", "blackboard", "canvas", "brightspace",
+    "admissions", "financial aid", "fafsa", "student aid", "moodle",
+    "student portal", "student affairs", "dean of students"
   ];
 
   // Student-specific financial / scholarship lures
@@ -146,7 +148,7 @@
     "student-login", "campus-sso", "portal-auth", "student-verify"
   ];
 
-  // Scare/urgency phrases scanned in visible page text.
+  // Scare/urgency phrases scanned in visible page text AND email bodies.
   const URGENCY_PHRASES = [
     "verify your account", "account suspended", "account has been suspended",
     "unusual activity", "suspicious activity", "confirm your identity",
@@ -155,18 +157,53 @@
     "will be suspended", "legal action", "avoid suspension", "restricted",
     "unauthorized", "locked your account", "verify now", "update your payment",
     "payment declined", "claim your prize", "you have won", "congratulations",
-    "wire transfer", "gift card", "bitcoin", "crypto", "refund"
+    "wire transfer", "gift card", "bitcoin", "crypto", "refund",
+    // Email-specific additions
+    "click here to verify", "click the link below", "do not ignore",
+    "action required", "your account will be deleted", "failure to respond",
+    "we detected a login", "sign in to secure", "important security notice",
+    "unusual sign-in", "we noticed a new login", "reply with your password",
+    "kindly update", "confirm your details", "your invoice is attached",
+    "reactivate your account", "account on hold", "pending verification"
   ];
 
-  // Student-specific panic phrases
+  // Student-specific panic phrases (page text + email body)
   const STUDENT_URGENCY_PHRASES = [
     "student account deactivation", "student account suspended",
     "student email will be terminated", "campus portal access suspended",
     "library access will be terminated", "confirm your student status immediately",
     "tuition overdue account termination", "office 365 student license expiration",
     "duo mfa verification required", "student bursary claim pending",
-    "urgent student aid disbursement", "academic hold placed on account"
+    "urgent student aid disbursement", "academic hold placed on account",
+    // Email-targeted student lures
+    "your .edu email will expire", "scholarship application is on hold",
+    "fafsa verification required", "student loan confirmation",
+    "campus account will be disabled", "reset your university password",
+    "registrar requires verification", "bursar payment failure",
+    "account will be suspended", "student account suspension",
+    "financial aid hold", "university account will be suspended",
+    "tuition hold", "billing hold"
   ];
+
+  // Phishing-favoured subject line keywords (used in analyzeEmail)
+  const PHISH_SUBJECT_KEYWORDS = [
+    "urgent", "action required", "account suspended", "verify now",
+    "important notice", "security alert", "unusual activity", "invoice",
+    "final notice", "password expir", "confirm your", "click to activate",
+    "you have a pending", "unclaimed", "reward", "winner", "congratulations",
+    "re:", "fwd:", "[external]", "[spam]",
+    "student aid", "fafsa", "tuition", "scholarship", "financial aid",
+    "campus account", "university email", "duo mfa", "office 365"
+  ];
+
+  // Suspicious email attachment extensions
+  const PHISH_ATTACH_EXTS = [
+    ".exe", ".msi", ".apk", ".bat", ".cmd", ".ps1", ".vbs",
+    ".js", ".jar", ".hta", ".scr", ".iso", ".doc", ".docm",
+    ".xls", ".xlsm", ".zip", ".7z", ".rar", ".html", ".htm"
+  ];
+
+
 
   const COMMON_SLD_WORDS = /^(mail|email|shop|store|news|blog|app|web|site|online|cloud|data|tech|media|group|inc|corp|home|my|the|get|go)/;
 
@@ -632,12 +669,358 @@
 
       return signals;
     } catch (err) {
-      console.warn("PhishLens engine page analysis caught error:", err);
+      console.warn("NETRA engine page analysis caught error:", err);
       return [];
     }
   }
 
+  // ---- email phishing analysis -----------------------------------------------
+
+  function analyzeEmail(email) {
+    try {
+      if (!email || typeof email !== "object") {
+        return createEmailFallback("", "no email data provided");
+      }
+      const signals = [];
+
+      // Parse sender
+      const rawFrom = String(email.from || "").trim();
+      const fromMatch = rawFrom.match(/^(.+?)\s*<([^>]+)>\s*$/);
+      const displayName = fromMatch ? fromMatch[1].replace(/["']/g, "").trim() : "";
+      const fromAddr    = fromMatch ? fromMatch[2].trim() : rawFrom;
+      const fromDomain  = fromAddr.includes("@")
+        ? fromAddr.split("@").pop().toLowerCase()
+        : fromAddr.toLowerCase();
+
+      // Display-name brand spoofing (e.g. "PayPal Support" <evil@scam.com>)
+      if (displayName) {
+        const dispNorm = deobfuscate(displayName.toLowerCase().replace(/[^a-z0-9]/g, ""));
+        for (const [brand, domains] of Object.entries(BRANDS)) {
+          if (brand.length <= 3) continue;
+          const isOfficial = domains.some(
+            (d) => fromDomain === d || fromDomain.endsWith("." + d)
+          );
+          if (!isOfficial && dispNorm.includes(brand)) {
+            signals.push(signal("email-display-name-spoof", 45, "high",
+              "Display name impersonates \"" + brand + "\" (sender: " + fromAddr + ")",
+              "The email claims to be from '" + brand + "' but actually arrives from '" + fromAddr + "'. Attackers fake display names because mail clients show only the friendly name.",
+              "impersonation"));
+            break;
+          }
+        }
+      }
+
+      // From-domain typosquat / homoglyph
+      if (fromDomain && !isBrandDomain(fromDomain)) {
+        const fSld  = fromDomain.split(".")[0];
+        const fDeob = deobfuscate(fSld);
+        for (const [brand] of Object.entries(BRANDS)) {
+          if (brand.length <= 3) continue;
+          const dist = levenshtein(fDeob, brand);
+          if (dist > 0 && dist <= (brand.length <= 6 ? 1 : 2)) {
+            signals.push(signal("email-sender-typosquat", 50, "high",
+              "Sender domain typosquats \"" + brand + "\" (got: " + fromDomain + ")",
+              "'" + fromDomain + "' is one character away from the real " + brand + " domain — a classic spoofing trick. Delete without clicking.",
+              "impersonation"));
+            break;
+          }
+          if (dist === 0 && fDeob !== fSld) {
+            signals.push(signal("email-sender-homoglyph", 50, "high",
+              "Sender domain uses homoglyphs to imitate \"" + brand + "\" (" + fromDomain + ")",
+              "Visually identical characters (e.g. Cyrillic vs Latin) are used to bypass spam filters.",
+              "impersonation"));
+            break;
+          }
+        }
+      }
+
+      // Disposable/temp sender domain
+      const DISPOSABLE = new Set([
+        "mailinator.com", "guerrillamail.com", "tempmail.com", "10minutemail.com",
+        "throwam.com", "sharklasers.com", "yopmail.com", "trashmail.com",
+        "maildrop.cc", "dispostable.com", "fakeinbox.com", "getairmail.com",
+        "spamgourmet.com", "discard.email", "filzmail.com", "spamex.com"
+      ]);
+      if (DISPOSABLE.has(fromDomain)) {
+        signals.push(signal("email-disposable-sender", 35, "high",
+          "Sender uses disposable/temp email service (" + fromDomain + ")",
+          "Legitimate universities and companies never send official email from disposable domains.",
+          "structure"));
+      }
+
+      // Reply-To mismatch
+      const replyTo = String(email.replyTo || "").trim();
+      if (replyTo) {
+        const rtM = replyTo.match(/<([^>]+)>/);
+        const rtAddr   = rtM ? rtM[1].trim() : replyTo;
+        const rtDomain = rtAddr.includes("@") ? rtAddr.split("@").pop().toLowerCase() : "";
+        if (rtDomain && rtDomain !== fromDomain) {
+          signals.push(signal("email-reply-to-mismatch", 35, "high",
+            "Reply-To domain differs from sender (" + rtDomain + " vs " + fromDomain + ")",
+            "When replies go to a different domain than the sender, attackers intercept your response without you noticing.",
+            "structure"));
+        }
+      }
+
+      // .EDU spoofing in From domain
+      if (!isGenuineEduDomain(fromDomain)) {
+        const hasEduLabel = fromDomain.includes(".edu.") || fromDomain.includes("-edu.") ||
+          fromDomain.split(".").some((l) => l === "edu");
+        const hasUniInDisplay = displayName &&
+          UNIVERSITY_KEYWORDS.some((kw) => displayName.toLowerCase().includes(kw));
+        if (hasEduLabel) {
+          signals.push(signal("email-edu-spoof", 45, "high",
+            "Sender fakes a .edu domain (" + fromDomain + ")",
+            "The sender domain contains '.edu' in a non-root position — a known trick to impersonate universities.",
+            "impersonation"));
+        } else if (hasUniInDisplay) {
+          signals.push(signal("email-uni-display-spoof", 30, "med",
+            "Display name references a university but sender is not .edu (" + fromAddr + ")",
+            "Phishers use your university name as a display name while sending from Gmail or other free domains.",
+            "impersonation"));
+        }
+      }
+
+      // SPF / DKIM / DMARC authentication failures
+      const spf   = String(email.receivedSpf  || "").toLowerCase();
+      const dkim  = String(email.dkimResult   || "").toLowerCase();
+      const dmarc = String(email.dmarcResult  || "").toLowerCase();
+      if (spf.includes("fail") || spf.includes("softfail")) {
+        signals.push(signal("email-spf-fail", 30, "high",
+          "SPF authentication failed",
+          "The sending server is not authorised by the From domain — high probability the address is forged.",
+          "structure"));
+      }
+      if (dkim.includes("fail") || dkim.includes("none")) {
+        signals.push(signal("email-dkim-fail", 20, "med",
+          "DKIM signature missing or failed",
+          "Email content is not cryptographically verified by the sender domain.",
+          "structure"));
+      }
+      if (dmarc.includes("fail") || dmarc.includes("reject") || dmarc.includes("quarantine")) {
+        signals.push(signal("email-dmarc-fail", 25, "high",
+          "DMARC policy violation",
+          "The sender domain explicitly states this mail should be rejected or quarantined.",
+          "structure"));
+      }
+
+      // Subject line analysis
+      const subject = String(email.subject || "").toLowerCase();
+      if (subject) {
+        const subHits = PHISH_SUBJECT_KEYWORDS.filter((k) => subject.includes(k));
+        if (subHits.length >= 2) {
+          signals.push(signal("email-phish-subject",
+            Math.min(30, 10 + subHits.length * 5), "high",
+            "High-risk subject line (" + subHits.slice(0, 3).join(", ") + ")",
+            "Multiple phishing-associated keywords in the subject line are a strong social engineering signal.",
+            "urgency"));
+        } else if (subHits.length === 1) {
+          signals.push(signal("email-phish-subject", 8, "low",
+            "Mildly suspicious subject keyword (\"" + subHits[0] + "\")",
+            "A single urgency keyword can be legitimate but warrants scrutiny of the rest of the email.",
+            "urgency"));
+        }
+      }
+
+      // Body analysis
+      const rawBody  = String(email.body || "");
+      const bodyText = rawBody.replace(/<[^>]+>/g, " ").toLowerCase();
+
+      const studentUrgentHits = STUDENT_URGENCY_PHRASES.filter((p) => bodyText.includes(p));
+      if (studentUrgentHits.length) {
+        signals.push(signal("email-student-urgency", 30, "high",
+          "Student panic language in email body (\"" + studentUrgentHits[0] + "\")",
+          "Threats about student account suspension or financial aid holds are the #1 student phishing tactic.",
+          "urgency"));
+      }
+      const urgencyHits = URGENCY_PHRASES.filter((p) => bodyText.includes(p));
+      if (urgencyHits.length && !studentUrgentHits.length) {
+        signals.push(signal("email-urgency",
+          Math.min(25, 5 + urgencyHits.length * 5), "med",
+          "Urgency/pressure language in body (" + urgencyHits.length + " phrases)",
+          "e.g. \"" + urgencyHits[0] + "\" — phishers manufacture panic to bypass careful thinking.",
+          "urgency"));
+      }
+
+      // Password request in body
+      if (/reply.{0,30}(password|credential|pin|otp|passcode)/i.test(rawBody) ||
+          /send.{0,30}(password|credential|pin|otp)/i.test(rawBody)) {
+        signals.push(signal("email-password-request", 55, "high",
+          "Email asks you to reply with your password or PIN",
+          "No legitimate service ever asks for your password via email — this is always a credential theft attempt.",
+          "credential"));
+      }
+
+      // Extract & analyse embedded links
+      const hrefRe = /href=["']([^"']+)["']/gi;
+      const extracted = [];
+      let hm;
+      while ((hm = hrefRe.exec(rawBody)) !== null) extracted.push(hm[1]);
+      const bareRe = /https?:\/\/[^\s"'<>)]{4,}/gi;
+      const bare   = bodyText.match(bareRe) || [];
+      const allLinks = [...new Set([...(email.links || []), ...extracted, ...bare])];
+
+      let suspLinkCount = 0;
+      const suspLinkResults = [];
+      for (const link of allLinks.slice(0, 20)) {
+        try {
+          const lr = analyzeUrl(link);
+          if (lr.score >= 15) { suspLinkCount++; suspLinkResults.push(lr); }
+        } catch (e) { /* skip */ }
+      }
+      if (suspLinkCount > 0) {
+        const topLink = suspLinkResults.slice().sort((a, b) => b.score - a.score)[0];
+        signals.push(signal("email-suspicious-links",
+          Math.min(50, 15 + suspLinkCount * 10), "high",
+          suspLinkCount + " suspicious link(s) found in email body",
+          "e.g. '" + topLink.host + "' scored " + topLink.score + "/100 — " + topLink.summary,
+          "structure"));
+      }
+
+      // Display text vs href mismatch
+      const anchorRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]{4,80})<\/a>/gi;
+      let mismatchCount = 0;
+      let am;
+      while ((am = anchorRe.exec(rawBody)) !== null) {
+        const href = am[1];
+        const txt  = am[2].trim().toLowerCase();
+        if (/^https?:\/\//i.test(txt)) {
+          try {
+            const dh = new URL(txt.trim()).hostname.toLowerCase();
+            const hh = new URL(href.trim()).hostname.toLowerCase();
+            if (dh !== hh && registrable(dh) !== registrable(hh)) mismatchCount++;
+          } catch (e) { /* skip */ }
+        }
+      }
+      if (mismatchCount > 0) {
+        signals.push(signal("email-link-mismatch", 40, "high",
+          mismatchCount + " link(s) show a fake URL hiding the real destination",
+          "The visible link text and actual href point to different domains — a reliable phishing indicator.",
+          "structure"));
+      }
+
+      // Dangerous attachments
+      const attachments = email.attachments || [];
+      const dangerAttach = attachments.filter((fn) =>
+        PHISH_ATTACH_EXTS.some((ext) => String(fn).toLowerCase().endsWith(ext))
+      );
+      if (dangerAttach.length) {
+        signals.push(signal("email-dangerous-attach",
+          Math.min(45, 20 + dangerAttach.length * 10), "high",
+          "Suspicious attachment(s): " + dangerAttach.slice(0, 3).join(", "),
+          "Executable or macro-enabled Office documents in unsolicited emails are the leading malware delivery vector.",
+          "structure"));
+      }
+
+      // Benign authentication signals
+      if (spf.includes("pass")) {
+        signals.push(signal("email-spf-pass", -8, "good",
+          "SPF authentication passed",
+          "The sending server is authorised by the From domain."));
+      }
+      if (dkim.includes("pass")) {
+        signals.push(signal("email-dkim-pass", -8, "good",
+          "DKIM signature verified",
+          "Email content is cryptographically signed and unaltered."));
+      }
+      if (dmarc.includes("pass")) {
+        signals.push(signal("email-dmarc-pass", -5, "good",
+          "DMARC policy passed",
+          "Sender domain authentication policy is satisfied."));
+      }
+
+      // Finalize
+      const rawScore = signals.reduce((s, x) => s + x.weight, 0);
+      const score = Math.max(0, Math.min(100, Math.round(rawScore)));
+      const level =
+        score >= 70 ? "dangerous" :
+        score >= 40 ? "suspicious" :
+        score >= 15 ? "caution" : "likely safe";
+      const isHighRisk = score >= 70;
+      const sortedSignals = signals.slice().sort((a, b) => b.weight - a.weight);
+      const topSig = sortedSignals.find((s) => s.weight > 0);
+
+      let summary;
+      if (level === "likely safe") {
+        summary = "No strong phishing indicators found in this email.";
+      } else if (score >= 70) {
+        summary = topSig
+          ? "HIGH RISK: " + topSig.title + ". Do not click any links or open attachments."
+          : "Multiple strong phishing indicators. Treat this email as malicious.";
+      } else {
+        summary = topSig
+          ? "Suspicious email: " + topSig.title + ". Verify through official channels before acting."
+          : "Some suspicious indicators found — exercise caution.";
+      }
+
+      const isStudentTargeted = sortedSignals.some((s) =>
+        s.id.startsWith("email-student") ||
+        s.id === "email-edu-spoof" ||
+        s.id === "email-uni-display-spoof");
+
+      return {
+        ok: true,
+        version: ENGINE_VERSION,
+        timestamp: Date.now(),
+        type: "email",
+        from: fromAddr,
+        fromDomain,
+        displayName,
+        subject: email.subject || "",
+        score,
+        level,
+        isHighRisk,
+        threatCategory: isStudentTargeted ? "student_email_phish"
+          : isHighRisk ? "credential_harvest"
+          : score >= 40 ? "suspicious_email" : "safe",
+        summary,
+        signals: sortedSignals,
+        suspiciousLinks: suspLinkResults.slice().sort((a, b) => b.score - a.score)
+          .map((r) => ({ url: r.url, score: r.score, level: r.level, summary: r.summary })),
+        studentProtection: {
+          isStudentTargeted,
+          detectedTargets: isStudentTargeted ? ["Student Email / Campus Account"] : [],
+          advice: isStudentTargeted ? [
+            "Campus IT will never email asking you to reset passwords via a link — call the helpdesk to verify.",
+            "Forward suspicious .edu-impersonating emails to your university abuse or security team.",
+            "Check the actual sender address (not just the display name) by hovering or expanding it."
+          ] : [
+            "Never click links in unexpected emails — navigate directly to the site by typing its address.",
+            "Check the sender domain carefully for subtle typos (e.g. 'arnazon.com' vs 'amazon.com').",
+            "Legitimate services never ask for passwords, PINs, or OTPs via email."
+          ]
+        },
+        error: null
+      };
+    } catch (err) {
+      return createEmailFallback("", err.message);
+    }
+  }
+
+  function createEmailFallback(from, errorMessage) {
+    return {
+      ok: false,
+      version: ENGINE_VERSION,
+      timestamp: Date.now(),
+      type: "email",
+      from: from || "",
+      fromDomain: "",
+      displayName: "",
+      subject: "",
+      score: 0,
+      level: "unknown",
+      isHighRisk: false,
+      threatCategory: "safe",
+      summary: errorMessage ? "Email scan limited: " + errorMessage : "Unable to analyze email.",
+      signals: [],
+      suspiciousLinks: [],
+      studentProtection: { isStudentTargeted: false, detectedTargets: [], advice: [] },
+      error: errorMessage || null
+    };
+  }
+
   // ---- scoring and shared result formatting ----------------------------------
+
 
   function categorizeThreat(signals, score) {
     if (score < 15) return "safe";
@@ -826,6 +1209,7 @@
     analyzeUrl,
     analyzePage,
     analyze,
+    analyzeEmail,
     BRANDS,
     levenshtein,
     deobfuscate,
@@ -833,5 +1217,5 @@
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else global.PhishLens = api;
+  else global.NETRA = api;
 })(typeof window !== "undefined" ? window : globalThis);

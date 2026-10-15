@@ -1,8 +1,8 @@
-// PhishLens Bridge — long-polls localhost:3055 for Plugin API code, runs it,
+﻿// NETRA Bridge — long-polls localhost:3055 for Plugin API code, runs it,
 // posts the result back. Whatever Devin sends lands on the canvas live.
 const BASE = "http://localhost:3055";
 
-figma.showUI(__html__, { width: 260, height: 120, title: "PhishLens Bridge" });
+figma.showUI(__html__, { width: 260, height: 120, title: "NETRA Bridge" });
 figma.ui.postMessage({ type: "status", text: "polling localhost:3055…" });
 
 function jsonable(v) {

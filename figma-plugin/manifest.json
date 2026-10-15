@@ -1,6 +1,6 @@
-{
-  "name": "PhishLens Cover Generator",
-  "id": "phishlens-cover-gen-2026",
+﻿{
+  "name": "NETRA Cover Generator",
+  "id": "netra-cover-gen-2026",
   "api": "1.0.0",
   "main": "code.js",
   "editorType": ["figma"]

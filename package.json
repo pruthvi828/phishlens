@@ -1,20 +1,21 @@
 {
-  "name": "utkarsh-ki-fish",
-  "version": "2.0.0",
-  "description": "Utkarsh Ki Fish — Real-time client-side phishing protection for students: detects university portal spoofing, fake .EDU domains, credential harvesting, and tuition scams with zero data collection.",
+  "name": "netra",
+  "version": "3.0.0",
+  "description": "NETRA: Network Eye for Threat Recognition & Analysis. Real-time client-side phishing protection for students: detects university portal spoofing, fake .EDU domains, credential harvesting, and tuition scams with zero data collection.",
   "main": "engine.js",
   "scripts": {
     "start": "node test-server.js",
     "test": "node test/e2e-test.js"
   },
   "keywords": [
-    "utkarsh-ki-fish",
+    "netra",
+    "threat-eye",
     "phishing-detection",
     "chrome-extension",
     "manifest-v3",
     "cybersecurity",
     "student-safety"
   ],
-  "author": "Utkarsh Ki Fish Team",
+  "author": "NETRA Team",
   "license": "MIT"
 }

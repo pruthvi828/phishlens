@@ -4,112 +4,170 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NETRA — Threat Eye</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+  /* ─────────────────────────────────────────────────
+     DESIGN TOKENS  (violet / sentinel palette)
+  ───────────────────────────────────────────────── */
   :root {
-    --bg:        #060a12;
-    --surface:   #0d1422;
-    --surface2:  #111827;
-    --border:    rgba(0,240,200,0.12);
-    --border-hi: rgba(0,240,200,0.35);
-    --cyan:      #00f0c8;
-    --cyan-dim:  #00c4a4;
-    --red:       #ff3b5c;
-    --orange:    #ff7b00;
-    --amber:     #f0a500;
-    --green:     #00e87a;
-    --text:      #e8f4f8;
-    --muted:     #6b8196;
+    --bg:        #0b0d17;
+    --surface:   #111827;
+    --surface2:  #1a2236;
+    --surface3:  #1e2d45;
+    --border:    rgba(139,92,246,0.15);
+    --border-hi: rgba(139,92,246,0.4);
+
+    --violet:    #8b5cf6;
+    --violet-dim:#6d28d9;
+    --rose:      #f43f5e;
+    --amber:     #f59e0b;
+    --emerald:   #10b981;
+    --sky:       #38bdf8;
+    --muted:     #64748b;
+    --text:      #e2e8f0;
+    --text-dim:  #94a3b8;
+
+    --danger-c:  #f43f5e;
+    --warn-c:    #f97316;
+    --caution-c: #f59e0b;
+    --safe-c:    #10b981;
+    --unk-c:     #64748b;
+
     --radius:    10px;
+    --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 Helvetica, Arial, sans-serif;
+    --mono:      'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas',
+                 monospace;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    width: 360px;
+    width: 370px;
     min-height: 480px;
-    font-family: 'Inter', system-ui, sans-serif;
+    max-height: 620px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: var(--font);
+    font-size: 13px;
     background: var(--bg);
     color: var(--text);
-    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
+  body::-webkit-scrollbar { width: 4px; }
+  body::-webkit-scrollbar-track { background: transparent; }
+  body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-  /* ── TOP BAR ── */
-  .topbar {
+  /* ─── HEADER ─── */
+  .header {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 14px;
-    background: linear-gradient(180deg, #0d1b2a 0%, var(--bg) 100%);
+    padding: 11px 14px;
+    background: linear-gradient(180deg, #131929 0%, var(--bg) 100%);
     border-bottom: 1px solid var(--border);
-    position: relative;
-  }
-  .topbar::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    opacity: 0.4;
+    position: sticky; top: 0; z-index: 10;
   }
 
-  .netra-logo {
-    width: 32px; height: 32px;
-    background: radial-gradient(circle at 40% 40%, #00f0c844, #00f0c808);
-    border: 1.5px solid var(--cyan-dim);
-    border-radius: 8px;
+  .logo-ring {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: radial-gradient(circle at 35% 35%, rgba(139,92,246,0.4), rgba(139,92,246,0.08));
+    border: 1.5px solid var(--violet-dim);
     display: flex; align-items: center; justify-content: center;
-    font-size: 17px;
+    font-size: 18px;
     flex-shrink: 0;
-    box-shadow: 0 0 12px rgba(0,240,200,0.2);
+    box-shadow: 0 0 16px rgba(139,92,246,0.25);
   }
 
-  .brand { flex: 1; }
+  .brand { flex: 1; min-width: 0; }
   .brand-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     letter-spacing: 2.5px;
-    color: var(--cyan);
+    color: var(--violet);
     text-transform: uppercase;
     line-height: 1;
-    text-shadow: 0 0 20px rgba(0,240,200,0.5);
+    text-shadow: 0 0 20px rgba(139,92,246,0.6);
   }
   .brand-sub {
-    font-size: 9.5px;
+    font-size: 8.5px;
     color: var(--muted);
     margin-top: 2px;
-    letter-spacing: 0.5px;
-    font-weight: 500;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .rescan-btn {
-    background: transparent;
-    border: 1px solid var(--border-hi);
-    color: var(--cyan);
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 4px 9px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
-  .rescan-btn:hover {
-    background: rgba(0,240,200,0.1);
-    border-color: var(--cyan);
-    box-shadow: 0 0 10px rgba(0,240,200,0.2);
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  /* ── MAIN VERDICT CARD ── */
-  .verdict-card {
-    margin: 12px 12px 0;
+  /* AI Toggle */
+  .ai-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px;
+    border-radius: 20px;
+    padding: 3px 8px 3px 5px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    user-select: none;
+  }
+  .ai-toggle-wrap:hover { border-color: var(--border-hi); }
+  .ai-toggle-wrap span {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .ai-toggle-wrap.active span { color: var(--violet); }
+
+  .toggle-switch {
+    width: 26px; height: 14px;
+    border-radius: 7px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    position: relative;
+    transition: background 0.2s;
+  }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 1px; left: 1px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.2s, background 0.2s;
+  }
+  .ai-toggle-wrap.active .toggle-switch { background: rgba(139,92,246,0.25); border-color: var(--violet-dim); }
+  .ai-toggle-wrap.active .toggle-switch::after { transform: translateX(12px); background: var(--violet); }
+
+  .icon-btn {
+    width: 28px; height: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { border-color: var(--border-hi); color: var(--text); }
+  .icon-btn.spin-anim svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── MAIN VERDICT CARD ─── */
+  .verdict-card {
+    padding: 18px 16px 14px;
     position: relative;
     overflow: hidden;
   }
@@ -117,376 +175,520 @@
     content: '';
     position: absolute;
     top: -40px; right: -40px;
-    width: 120px; height: 120px;
+    width: 130px; height: 130px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,240,200,0.07) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
     pointer-events: none;
+  }
+
+  /* scanning shimmer */
+  .verdict-card.scanning::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.06) 50%, transparent 100%);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .verdict-row {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
   }
 
-  /* Eye gauge */
-  .eye-gauge {
+  /* Score orb — conic-gradient, no SVG */
+  .score-orb {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from -90deg,
+      var(--orb-color, var(--unk-c)) var(--orb-pct, 0%),
+      var(--surface2) var(--orb-pct, 0%)
+    );
+    display: flex; align-items: center; justify-content: center;
     position: relative;
-    width: 68px; height: 68px;
     flex-shrink: 0;
+    transition: background 0.5s ease;
+    filter: drop-shadow(0 0 10px var(--orb-color, transparent));
   }
-  .eye-gauge svg {
-    width: 68px; height: 68px;
-    transform: rotate(-90deg);
-  }
-  .eye-gauge .track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 5; }
-  .eye-gauge .arc   { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1), stroke 0.4s; }
-  .eye-center {
+  .score-orb::before {
+    content: '';
     position: absolute;
-    inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+    inset: 7px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .orb-center {
+    position: relative;
+    z-index: 1;
+    text-align: center;
     line-height: 1;
   }
-  .eye-score {
-    font-size: 19px;
+  .orb-num {
+    font-size: 22px;
     font-weight: 900;
-    letter-spacing: -1px;
+    color: var(--orb-color, var(--muted));
+    font-variant-numeric: tabular-nums;
+    transition: color 0.4s;
   }
-  .eye-label {
-    font-size: 7.5px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
+  .orb-label {
+    font-size: 7px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--muted);
+    font-weight: 600;
     margin-top: 1px;
   }
 
+  /* Verdict info */
   .verdict-info { flex: 1; min-width: 0; }
-  .verdict-level {
-    display: inline-block;
+
+  .level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 10px;
     font-weight: 800;
-    text-transform: uppercase;
     letter-spacing: 1.2px;
-    padding: 3px 9px;
-    border-radius: 4px;
-    margin-bottom: 5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+    margin-bottom: 6px;
+    opacity: 0.9;
   }
+
   .verdict-host {
-    font-size: 11px;
-    color: var(--muted);
-    word-break: break-all;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 400;
+    font-size: 11.5px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .verdict-summary {
-    font-size: 11.5px;
-    margin-top: 5px;
-    color: var(--text);
-    font-weight: 500;
+    font-size: 11px;
+    color: var(--text-dim);
     line-height: 1.4;
   }
 
-  /* student box */
-  .student-box {
-    margin-top: 10px;
-    background: rgba(0,240,200,0.05);
-    border: 1px solid rgba(0,240,200,0.18);
-    border-radius: 7px;
-    padding: 8px 10px;
-    font-size: 11px;
-    display: none;
-  }
-  .student-box b {
-    display: block;
-    color: var(--cyan);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-
-  /* ── SIGNALS ── */
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 14px 6px;
-  }
-  .section-title {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    flex: 1;
-  }
-  .section-count {
-    font-size: 9px;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .signals-list {
-    list-style: none;
-    padding: 0 12px;
-  }
-  .signals-list li {
-    display: flex;
-    gap: 9px;
-    align-items: flex-start;
-    padding: 7px 10px;
-    margin-bottom: 5px;
-    background: var(--surface2);
-    border-radius: 7px;
-    border-left: 3px solid var(--muted);
-    font-size: 11px;
-    animation: fadeIn 0.3s ease;
-  }
-  .signals-list li.high { border-color: var(--red); }
-  .signals-list li.med  { border-color: var(--orange); }
-  .signals-list li.low  { border-color: var(--amber); }
-  .signals-list li.good { border-color: var(--green); }
-
-  .sig-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-  .sig-body b { display: block; font-size: 11px; font-weight: 600; margin-bottom: 2px; }
-  .sig-body span { color: var(--muted); font-size: 10.5px; line-height: 1.35; display: block; }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-
-  /* ── AI PANEL ── */
-  .ai-panel {
-    margin: 8px 12px 6px;
-    background: linear-gradient(135deg, rgba(0,240,200,0.06), rgba(99,102,241,0.06));
-    border: 1px solid rgba(0,240,200,0.2);
-    border-radius: 8px;
-    padding: 9px 12px;
-    display: none;
-    animation: fadeIn 0.3s ease;
-  }
-  .ai-panel.visible { display: block; }
-  .ai-header {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 5px;
-  }
-  .ai-label {
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--cyan);
-    flex: 1;
-  }
-  .ai-badge {
-    font-size: 9.5px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
-  }
-  .ai-badge.safe       { background: rgba(0,232,122,0.15); color: var(--green); border: 1px solid rgba(0,232,122,0.3); }
-  .ai-badge.suspicious { background: rgba(255,123,0,0.15);  color: var(--orange); border: 1px solid rgba(255,123,0,0.3); }
-  .ai-badge.phishing   { background: rgba(255,59,92,0.15);  color: var(--red); border: 1px solid rgba(255,59,92,0.3); }
-  .ai-confidence {
-    font-size: 9px;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .ai-reasoning {
-    font-size: 11px;
-    color: #c4d7e5;
-    line-height: 1.45;
-    margin-bottom: 6px;
-  }
-  .ai-indicators {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-  .ai-chip {
-    font-size: 9.5px;
-    background: rgba(0,240,200,0.07);
-    border: 1px solid rgba(0,240,200,0.18);
-    border-radius: 4px;
-    padding: 2px 6px;
-    color: var(--text);
-  }
-  .ai-shimmer {
+  /* ─── PRIVACY ROW ─── */
+  .privacy-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
-    color: var(--cyan);
-    padding: 3px 0;
+    margin: 0 16px 8px;
+    padding: 7px 11px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 10px;
+    color: var(--muted);
   }
-  .ai-shimmer::before {
-    content: "";
-    width: 12px; height: 12px;
-    border: 2px solid rgba(0,240,200,0.3);
-    border-top-color: var(--cyan);
+  .privacy-dot {
+    width: 7px; height: 7px;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    background: var(--emerald);
+    flex-shrink: 0;
+    box-shadow: 0 0 6px var(--emerald);
+  }
+  .privacy-dot.ai-active { background: var(--violet); box-shadow: 0 0 6px var(--violet); }
+  .privacy-text { flex: 1; font-weight: 500; }
+  .privacy-mode-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(16,185,129,0.12);
+    color: var(--emerald);
+    border: 1px solid rgba(16,185,129,0.25);
+  }
+  .privacy-mode-label.ai { background: rgba(139,92,246,0.12); color: var(--violet); border-color: rgba(139,92,246,0.25); }
+
+  /* ─── STUDENT ALERT ─── */
+  .student-box {
+    display: none;
+    margin: 0 16px 10px;
+    padding: 9px 12px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.4;
+    animation: fadeUp 0.3s ease;
+  }
+  .student-box b {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 4px;
+  }
+
+  /* ─── AI PANEL ─── */
+  .ai-result-panel {
+    display: none;
+    margin: 0 16px 10px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(99,102,241,0.04) 100%);
+    border: 1px solid rgba(139,92,246,0.22);
+    border-radius: 10px;
+    overflow: hidden;
+    animation: fadeUp 0.35s ease;
+  }
+  .ai-result-panel.visible { display: block; }
+
+  .ai-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(139,92,246,0.12);
+  }
+  .ai-gemini-icon {
+    font-size: 14px;
     flex-shrink: 0;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── ANALYZER ── */
-  .analyzer-section {
-    padding: 4px 12px 12px;
-    border-top: 1px solid var(--border);
-    margin-top: 6px;
-  }
-  .analyzer-section .section-header { padding: 10px 2px 6px; }
-
-  .input-wrap { position: relative; }
-  .url-input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 7px;
-    padding: 8px 10px;
-    font: 11px 'JetBrains Mono', monospace;
-    resize: none;
-    outline: none;
-    transition: border-color 0.2s;
-    line-height: 1.4;
-  }
-  .url-input:focus { border-color: var(--cyan-dim); box-shadow: 0 0 0 2px rgba(0,240,200,0.08); }
-  .url-input::placeholder { color: var(--muted); }
-
-  .btn-row { display: flex; gap: 7px; margin-top: 7px; }
-  .btn {
-    background: linear-gradient(135deg, #00c4a4, #007a6a);
-    border: 0;
-    color: #000;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.3px;
-    padding: 7px 12px;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: inherit;
+  .ai-panel-title {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--violet);
     flex: 1;
   }
-  .btn:hover { filter: brightness(1.15); box-shadow: 0 4px 14px rgba(0,240,200,0.25); }
-  .btn.ghost {
+  .ai-verdict-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+  }
+  .ai-verdict-badge.safe       { background: rgba(16,185,129,0.15); color: var(--emerald); border: 1px solid rgba(16,185,129,0.3); }
+  .ai-verdict-badge.suspicious { background: rgba(249,115,22,0.15);  color: var(--warn-c); border: 1px solid rgba(249,115,22,0.3); }
+  .ai-verdict-badge.phishing   { background: rgba(244,63,94,0.15);   color: var(--rose); border: 1px solid rgba(244,63,94,0.3); }
+  .ai-score-txt { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+
+  .ai-panel-body { padding: 9px 12px; }
+  .ai-reasoning-txt {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .ai-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ai-chip {
+    font-size: 9.5px;
+    background: rgba(139,92,246,0.08);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--text-dim);
+  }
+
+  /* Shimmer loading */
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--violet);
+  }
+  .ai-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(139,92,246,0.25);
+    border-top-color: var(--violet);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* ─── SIGNALS ─── */
+  .section-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px 7px;
+  }
+  .section-bar-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex: 1;
+  }
+  .sig-count-badge {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  /* Chip-style signals */
+  .signals-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 14px;
+  }
+  .sig-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: default;
+    transition: opacity 0.15s;
+    max-width: 100%;
+    position: relative;
+  }
+  .sig-chip .sig-tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--surface2);
     border: 1px solid var(--border);
-    color: var(--muted);
-    font-weight: 600;
-    flex: 0 0 auto;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text);
+    white-space: nowrap;
+    max-width: 240px;
+    white-space: normal;
+    z-index: 100;
+    pointer-events: none;
+    line-height: 1.4;
   }
-  .btn.ghost:hover { border-color: var(--border-hi); color: var(--text); }
+  .sig-chip:hover .sig-tip { display: block; }
+  .sig-chip.high  { background: rgba(244,63,94,0.1);   border-color: rgba(244,63,94,0.3);   color: var(--rose); }
+  .sig-chip.med   { background: rgba(249,115,22,0.1);  border-color: rgba(249,115,22,0.3);  color: var(--warn-c); }
+  .sig-chip.low   { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.3);  color: var(--caution-c); }
+  .sig-chip.good  { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: var(--emerald); }
+  .sig-chip-icon  { font-size: 12px; flex-shrink: 0; }
+  .sig-chip-text  { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  #analyze-res { margin-top: 9px; }
+  /* ─── URL INSPECTOR ─── */
+  .inspector-section {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 14px;
+  }
+  .inspector-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .inspector-input-wrap {
+    display: flex;
+    gap: 6px;
+  }
+  .url-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    outline: none;
+    resize: none;
+    line-height: 1.4;
+    transition: border-color 0.2s;
+  }
+  .url-input:focus { border-color: var(--border-hi); box-shadow: 0 0 0 2px rgba(139,92,246,0.1); }
+  .url-input::placeholder { color: var(--muted); }
 
-  /* ── FOOTER ── */
+  .inspect-btn {
+    background: var(--violet-dim);
+    border: 0;
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 8px 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+  .inspect-btn:hover { background: var(--violet); box-shadow: 0 4px 14px rgba(139,92,246,0.35); }
+
+  .clear-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+    align-self: flex-start;
+  }
+  .clear-btn:hover { border-color: var(--border-hi); color: var(--text); }
+
+  #analyze-res { margin-top: 10px; }
+
+  /* ─── FOOTER ─── */
   footer {
     text-align: center;
-    padding: 7px 12px 10px;
+    padding: 8px 14px 11px;
     font-size: 9px;
     color: var(--muted);
     border-top: 1px solid var(--border);
     letter-spacing: 0.3px;
+    line-height: 1.6;
   }
+  footer span { color: var(--emerald); font-weight: 600; }
 
-  /* scan line animation */
-  @keyframes scanline {
-    0%   { top: -2px; opacity: 0.6; }
-    100% { top: 100%; opacity: 0; }
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-  .scanning .verdict-card::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; top: -2px;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    animation: scanline 1.2s ease-in-out infinite;
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 16px 10px;
   }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="netra-logo">👁</div>
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="logo-ring">🛡️</div>
   <div class="brand">
     <div class="brand-name">NETRA</div>
     <div class="brand-sub">Network Eye for Threat Recognition &amp; Analysis</div>
   </div>
-  <button class="rescan-btn" id="btn-rescan">↺ Rescan</button>
+  <div class="header-actions">
+    <!-- AI Toggle -->
+    <div class="ai-toggle-wrap" id="ai-toggle" title="Toggle Gemini AI analysis">
+      <div class="toggle-switch" id="toggle-sw"></div>
+      <span id="ai-toggle-label">AI</span>
+    </div>
+    <!-- Rescan -->
+    <button class="icon-btn" id="btn-rescan" title="Rescan page">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+    </button>
+  </div>
 </div>
 
+<!-- ── VERDICT CARD ── -->
 <div class="verdict-card scanning" id="verdict-card">
   <div class="verdict-row">
-    <div class="eye-gauge">
-      <svg viewBox="0 0 68 68">
-        <circle class="track" cx="34" cy="34" r="28"/>
-        <circle class="arc" id="gauge-arc" cx="34" cy="34" r="28"
-          stroke-dasharray="175.9"
-          stroke-dashoffset="175.9"
-          stroke="var(--cyan)"/>
-      </svg>
-      <div class="eye-center">
-        <span class="eye-score" id="score-num">—</span>
-        <span class="eye-label">RISK</span>
+
+    <!-- Conic-gradient score orb (no SVG) -->
+    <div class="score-orb" id="score-orb">
+      <div class="orb-center">
+        <div class="orb-num" id="score-num">—</div>
+        <div class="orb-label">RISK</div>
       </div>
     </div>
+
     <div class="verdict-info">
-      <span class="verdict-level" id="lvl" style="background:rgba(107,129,150,0.15);color:var(--muted);">Scanning…</span>
+      <div class="level-badge" id="lvl" style="color:var(--muted);border-color:var(--muted);background:transparent;">
+        ◌ Scanning…
+      </div>
       <div class="verdict-host" id="host">Evaluating page…</div>
       <div class="verdict-summary" id="summary"></div>
     </div>
   </div>
-  <div class="student-box" id="student-box">
-    <b>🎓 Student Alert</b>
-    <div id="student-advice"></div>
-  </div>
+</div>
 
-  <!-- Gemini AI Verdict Panel -->
-  <div class="ai-panel" id="ai-panel">
-    <div class="ai-shimmer" id="ai-shimmer">Gemini AI is analyzing this page…</div>
-    <div id="ai-content" style="display:none;">
-      <div class="ai-header">
-        <span class="ai-label">🤖 Gemini AI Verdict</span>
-        <span class="ai-badge" id="ai-badge"></span>
-        <span class="ai-confidence" id="ai-confidence"></span>
-      </div>
-      <div class="ai-reasoning" id="ai-reasoning"></div>
-      <div class="ai-indicators" id="ai-indicators"></div>
+<!-- ── PRIVACY STATUS ROW ── -->
+<div class="privacy-row" id="privacy-row">
+  <div class="privacy-dot" id="privacy-dot"></div>
+  <div class="privacy-text" id="privacy-text">Local heuristics only — no data sent</div>
+  <div class="privacy-mode-label" id="privacy-label">PRIVATE</div>
+</div>
+
+<!-- ── STUDENT ALERT ── -->
+<div class="student-box" id="student-box">
+  <b>🎓 Student Protection Alert</b>
+  <div id="student-advice"></div>
+</div>
+
+<!-- ── AI PANEL ── -->
+<div class="ai-result-panel" id="ai-panel">
+  <!-- Loading state -->
+  <div class="ai-loading" id="ai-shimmer">
+    <div class="ai-spinner"></div>
+    Gemini AI is analyzing this page…
+  </div>
+  <!-- Result state -->
+  <div id="ai-content" style="display:none;">
+    <div class="ai-panel-header">
+      <span class="ai-gemini-icon">✦</span>
+      <span class="ai-panel-title">Gemini AI Verdict</span>
+      <span class="ai-verdict-badge" id="ai-badge"></span>
+      <span class="ai-score-txt" id="ai-confidence"></span>
+    </div>
+    <div class="ai-panel-body">
+      <div class="ai-reasoning-txt" id="ai-reasoning"></div>
+      <div class="ai-chips" id="ai-indicators"></div>
     </div>
   </div>
 </div>
 
-<div class="section-header">
-  <span class="section-title">Threat Signals</span>
-  <span class="section-count" id="sig-count"></span>
-</div>
-<ul class="signals-list" id="sigs">
-  <li class="good"><span class="sig-icon">🔍</span><div class="sig-body"><b>Scanning</b><span>Evaluating page heuristics…</span></div></li>
-</ul>
+<div class="divider"></div>
 
-<div class="analyzer-section">
-  <div class="section-header">
-    <span class="section-title">Instant Link Inspector</span>
+<!-- ── THREAT SIGNALS ── -->
+<div class="section-bar">
+  <span class="section-bar-title">Threat Signals</span>
+  <span class="sig-count-badge" id="sig-count"></span>
+</div>
+<div class="signals-chips" id="sigs">
+  <div class="sig-chip good">
+    <span class="sig-chip-icon">🔍</span>
+    <span class="sig-chip-text">Scanning…</span>
   </div>
-  <div class="input-wrap">
+</div>
+
+<div class="divider"></div>
+
+<!-- ── URL INSPECTOR ── -->
+<div class="inspector-section">
+  <div class="inspector-title">⚡ Instant Link Inspector</div>
+  <div class="inspector-input-wrap">
     <textarea class="url-input" id="url-input" rows="2"
-      placeholder="Paste any URL from email, SMS, or Discord to inspect…"></textarea>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="btn-analyze">Inspect Link</button>
-    <button class="btn ghost" id="btn-clear">✕</button>
+      placeholder="Paste any URL from email, SMS, or chat…"></textarea>
+    <button class="inspect-btn" id="btn-analyze">Inspect</button>
+    <button class="clear-btn" id="btn-clear">✕</button>
   </div>
   <div id="analyze-res"></div>
 </div>
 
-<footer>Local heuristics + Gemini AI · No credentials stored · NETRA v3.0</footer>
+<!-- ── FOOTER ── -->
+<footer>
+  <span>🔒 No credentials stored &middot; No browsing history collected</span><br>
+  Heuristic engine runs 100% on-device &middot; AI analysis optional &amp; toggleable &middot; NETRA v3.0
+</footer>
 
 <script src="engine.js"></script>
 <script src="popup.js"></script>

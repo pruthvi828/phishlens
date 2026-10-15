@@ -1,6 +1,6 @@
-{
-  "name": "PhishLens Bridge",
-  "id": "phishlens-bridge-2026",
+﻿{
+  "name": "NETRA Bridge",
+  "id": "netra-bridge-2026",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",

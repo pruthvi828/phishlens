@@ -10,12 +10,12 @@
 
 ---
 
-## 2. Shared Result Format Specification (`PhishLensResult`)
+## 2. Shared Result Format Specification (`NETRAResult`)
 
 All components (`engine.js`, `content.js`, `background.js`, `popup.js`, and demo suites) must strictly adhere to this standardized JSON schema.
 
 ```typescript
-interface PhishLensResult {
+interface NETRAResult {
   ok: boolean;                         // True if analysis completed, false if graceful error fallback
   version: "2.0.0-student-shield";     // Engine version identifier
   timestamp: number;                   // Unix timestamp (ms) of analysis
@@ -28,8 +28,8 @@ interface PhishLensResult {
                                        // 'student_portal_spoof' | 'credential_harvest' | 'financial_aid_scam' |
                                        // 'typosquat' | 'homoglyph' | 'urgency_scam' | 'suspicious_structure' | 'safe'
   summary: string;                     // 1-sentence plain-English verdict for students
-  signals: PhishSignal[];              // Sorted list of all detected signals (highest weight first)
-  pageSignals: PhishSignal[];          // Signals detected specifically from page DOM
+  signals: NETRASignal[];              // Sorted list of all detected signals (highest weight first)
+  pageSignals: NETRASignal[];          // Signals detected specifically from page DOM
   studentProtection: {
     isStudentTargeted: boolean;        // Whether page specifically targets students / university users
     detectedTargets: string[];         // e.g. ["Canvas LMS", "Financial Aid", "University SSO"]
@@ -38,7 +38,7 @@ interface PhishLensResult {
   error?: string | null;               // Error message if ok === false
 }
 
-interface PhishSignal {
+interface NETRASignal {
   id: string;                          // Unique signal identifier (e.g. 'student-edu-spoof')
   weight: number;                      // Score impact (-10 to +50)
   severity: "high" | "med" | "low" | "good"; // Display severity styling
@@ -61,20 +61,20 @@ interface PhishSignal {
 ### Content Script -> Background Service Worker:
 ```javascript
 chrome.runtime.sendMessage({
-  type: "pl-score",
-  result: phishLensResult // Complete PhishLensResult object
+  type: "netra-score",
+  result: netraResult // Complete NETRAResult object
 });
 ```
 
 ### Background Service Worker Handling:
-1. Validates message against `PhishLensResult` format.
+1. Validates message against `NETRAResult` format.
 2. Updates tab badge color and text (`!` for high risk, score number for medium).
 3. Evaluates deduplication cache: `${tabId}:${url}:${result.threatCategory}:${Math.floor(result.score/10)}`.
 4. If `isHighRisk === true` and not recently notified, fires `chrome.notifications.create`.
 5. Caches current tab verdict for popup query.
 
 ### Popup -> Content Script / Background:
-- Sends `{ type: "pl-get-result" }` to retrieve cached tab result.
+- Sends `{ type: "netra-get-result" }` to retrieve cached tab result.
 - Displays immediate visual gauge and student protection advice.
 
 ---

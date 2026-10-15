@@ -1,4 +1,4 @@
-// PhishLens Cover Generator — draws a 1600x900 Devpost cover as editable nodes.
+﻿// NETRA Cover Generator — draws a 1600x900 Devpost cover as editable nodes.
 // Run: Figma → Plugins → Development → Import plugin from manifest → run it.
 
 const C = {
@@ -32,7 +32,7 @@ async function text(str, size, color, style = "Bold") {
 
 async function main() {
   const frame = figma.createFrame();
-  frame.name = "PhishLens Cover 1600×900";
+  frame.name = "NETRA Cover 1600×900";
   frame.resize(1600, 900);
   frame.fills = [{ type: "SOLID", color: C.bg }];
   frame.clipsContent = true;
@@ -86,7 +86,7 @@ async function main() {
   logo.appendChild(bang);
 
   // ---- title / tagline (right side) ----
-  const title = await text("PhishLens", 120, C.white);
+  const title = await text("NETRA", 120, C.white);
   title.x = 540; title.y = 250;
   title.fills = [{
     type: "GRADIENT_LINEAR",
@@ -143,7 +143,7 @@ async function main() {
 
   figma.currentPage.appendChild(frame);
   figma.viewport.scrollAndZoomIntoView([frame]);
-  figma.closePlugin("PhishLens cover created — select the frame and export PNG (2x).");
+  figma.closePlugin("NETRA cover created — select the frame and export PNG (2x).");
 }
 
 main().catch((e) => figma.closePlugin("Error: " + e.message));

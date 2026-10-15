@@ -1,5 +1,5 @@
 /**
- * PhishLens Student Shield — Automated Verification Suite
+ * NETRA Shield — Automated Verification Suite
  * Validates Manifest V3 compliance, engine heuristics, schema conformance,
  * deduplication logic, and error boundaries.
  */
@@ -23,7 +23,7 @@ function assert(condition, testName) {
 }
 
 console.log("\n========================================================");
-console.log("  PHISHLENS STUDENT SHIELD — VERIFICATION SUITE");
+console.log("  NETRA THREAT EYE — VERIFICATION SUITE");
 console.log("========================================================\n");
 
 // 1. MANIFEST V3 VALIDATION
@@ -164,8 +164,42 @@ assert(notify3 === true, "New URL path triggers notification");
 const notify4 = simulateShouldNotify(1, "https://fake-login.com/page", "credential_harvest", 85, t0 + (5 * 60 * 1000) + 1000);
 assert(notify4 === true, "Notification allowed after cooldown expires");
 
-// 5. RESILIENCE & ERROR BOUNDARIES
-console.log("\n[5] Fail-Safe & Error Resilience Validation");
+// 5. EMAIL PHISHING ANALYSIS VALIDATION
+console.log("\n[5] Email Phishing Analysis Engine Validation");
+
+const phishEmail = {
+  from: "support-bursar@university-aid-verify.top",
+  displayName: "University Financial Aid Office",
+  subject: "URGENT: Student Account Suspension & Tuition Hold",
+  body: "Dear student, your university account will be suspended within 24 hours due to unverified billing details. Verify your account immediately: http://portal.university-sso.top/login",
+  rawBody: '<a href="http://portal.university-sso.top/login">http://university.edu/verify</a>',
+  links: ["http://portal.university-sso.top/login"],
+  attachments: ["financial_aid_invoice.exe"]
+};
+
+const emailRes = engine.analyzeEmail(phishEmail);
+assert(emailRes.ok === true, "Email analysis completed successfully");
+assert(emailRes.score >= 70, `Phishing email flagged as high risk (Score: ${emailRes.score})`);
+assert(emailRes.isHighRisk === true, "isHighRisk is true for dangerous email");
+assert(emailRes.studentProtection && emailRes.studentProtection.isStudentTargeted === true, "Identified student-targeted email attack");
+assert(emailRes.signals.some(s => s.id === "email-dangerous-attach"), "Detected dangerous executable attachment");
+assert(emailRes.signals.some(s => s.id === "email-student-urgency"), "Detected student urgency/account suspension phrase");
+
+const legitEmail = {
+  from: "admissions@stanford.edu",
+  displayName: "Stanford Admissions",
+  subject: "Welcome to Fall Quarter Registration",
+  body: "Classes begin next week. Visit the official student registrar portal at https://stanford.edu for course schedules.",
+  links: ["https://stanford.edu"],
+  attachments: ["schedule.pdf"]
+};
+
+const legitRes = engine.analyzeEmail(legitEmail);
+assert(legitRes.score < 20, `Legitimate university email recognized as safe (Score: ${legitRes.score})`);
+assert(legitRes.isHighRisk === false, "Legitimate email is not high risk");
+
+// 6. RESILIENCE & ERROR BOUNDARIES
+console.log("\n[6] Fail-Safe & Error Resilience Validation");
 const nullAnalysis = engine.analyze(null);
 assert(nullAnalysis.ok === false && nullAnalysis.score === 0, "Null input handled gracefully without throwing");
 
@@ -174,6 +208,9 @@ assert(invalidUrlAnalysis.ok !== undefined, "Malformed string handled without cr
 
 const emptyPageAnalysis = engine.analyzePage(null);
 assert(Array.isArray(emptyPageAnalysis) && emptyPageAnalysis.length === 0, "Null page snapshot returns empty array safely");
+
+const nullEmailAnalysis = engine.analyzeEmail(null);
+assert(nullEmailAnalysis.ok === false && nullEmailAnalysis.score === 0, "Null email input handled gracefully");
 
 console.log("\n========================================================");
 console.log(`  VERIFICATION RESULTS: ${passedTests} / ${totalTests} TESTS PASSED`);
