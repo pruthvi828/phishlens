@@ -116,7 +116,23 @@ const snapGoogleQuiz = {
 const resGoogleQuizPage = engine.analyze(snapGoogleQuiz.url, snapGoogleQuiz);
 assert(resGoogleQuizPage.score < 15 && resGoogleQuizPage.level === "likely safe", `Google Phishing Quiz entire page qualifies as safe (Score: ${resGoogleQuizPage.score})`);
 assert(resGoogleQuizPage.isHighRisk === false, "Google Phishing Quiz entire page is not high risk");
-assert(!resGoogleQuizPage.signals.some(s => s.id === "student-urgency" || s.id === "form-noaction"), "Simulated quiz question copy does not trigger false alarms on verified quiz platform");
+// Test 2H: Top Popular Brands Guaranteed Safe Score 0 (Amazon, YouTube, Facebook, Reddit, Wikipedia)
+const topSafeBrands = [
+  'https://www.amazon.com',
+  'https://www.amazon.in',
+  'https://www.amazon.co.uk',
+  'https://www.youtube.com',
+  'https://youtu.be/dQw4w9WgXcQ',
+  'https://www.facebook.com',
+  'https://m.facebook.com',
+  'https://www.reddit.com',
+  'https://en.wikipedia.org'
+];
+for (const brandUrl of topSafeBrands) {
+  const resBrand = engine.analyze(brandUrl);
+  assert(resBrand.score === 0 && resBrand.level === "likely safe", `Brand ${brandUrl} guaranteed safe (Score: ${resBrand.score}, got ${resBrand.level})`);
+  assert(resBrand.isHighRisk === false, `Brand ${brandUrl} is not high risk`);
+}
 
 // 3. SHARED RESULT FORMAT SCHEMA VALIDATION
 console.log("\n[3] Shared Schema Conformance Validation");

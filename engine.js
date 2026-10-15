@@ -16,20 +16,64 @@
 
   // Brands commonly impersonated in phishing, mapped to their real domains.
   const BRANDS = {
-    paypal: ["paypal.com", "paypal-objects.com"],
-    amazon: ["amazon.com"],
-    apple: ["apple.com", "icloud.com"],
-    google: ["google.com", "accounts.google.com", "withgoogle.com", "gstatic.com",
-      "googleapis.com", "googleusercontent.com", "googleblog.com", "google.org",
-      "jigsaw.google.com"],
-    microsoft: ["microsoft.com", "live.com", "outlook.com", "office.com",
+    paypal: ["paypal.com", "paypal-objects.com", "paypal.me"],
+    amazon: [
+      "amazon.com", "amazon.in", "amazon.co.uk", "amazon.de", "amazon.ca",
+      "amazon.co.jp", "amazon.fr", "amazon.it", "amazon.es", "amazon.com.au",
+      "amazon.com.mx", "amazon.com.br", "amazon.cn", "amazon.nl", "amazon.sg",
+      "amazon.ae", "amazon.sa", "amazon.pl", "amazon.se", "amazon.eg",
+      "amazon.com.tr", "amazon.com.be", "amazon.ie", "media-amazon.com",
+      "ssl-images-amazon.com", "primevideo.com", "a2z.com", "aboutamazon.com",
+      "amazonaws.com", "aws.amazon.com", "images-amazon.com"
+    ],
+    apple: ["apple.com", "icloud.com", "appleid.apple.com", "cdn-apple.com", "mzstatic.com"],
+    google: [
+      "google.com", "google.co.in", "google.co.uk", "google.de", "google.ca",
+      "google.co.jp", "google.fr", "google.it", "google.es", "google.com.au",
+      "google.com.br", "google.nl", "accounts.google.com", "withgoogle.com",
+      "gstatic.com", "googleapis.com", "googleusercontent.com", "googleblog.com",
+      "google.org", "jigsaw.google.com", "googlevideo.com", "gmail.com"
+    ],
+    youtube: [
+      "youtube.com", "youtu.be", "ytimg.com", "youtube-nocookie.com", "yt.be"
+    ],
+    facebook: [
+      "facebook.com", "fb.com", "meta.com", "messenger.com", "fbcdn.net",
+      "fbsbx.com", "meta.me", "workplace.com"
+    ],
+    microsoft: [
+      "microsoft.com", "live.com", "outlook.com", "office.com",
       "office365.com", "office.net", "sharepoint.com", "microsoftonline.com",
-      "live.net", "msft.net", "bing.com", "xbox.com"],
-    netflix: ["netflix.com"],
-    facebook: ["facebook.com", "fb.com", "meta.com"],
-    instagram: ["instagram.com"],
-    twitter: ["twitter.com", "x.com"],
-    linkedin: ["linkedin.com"],
+      "live.net", "msft.net", "bing.com", "xbox.com", "msn.com", "skype.com",
+      "teams.microsoft.com", "microsoftstream.com"
+    ],
+    netflix: ["netflix.com", "nflxext.com", "nflximg.net", "nflxvideo.net"],
+    instagram: ["instagram.com", "threads.net", "cdninstagram.com"],
+    twitter: ["twitter.com", "x.com", "t.co", "twimg.com", "x.ai"],
+    linkedin: ["linkedin.com", "licdn.com"],
+    reddit: ["reddit.com", "redd.it", "redditstatic.com", "redditmedia.com"],
+    wikipedia: ["wikipedia.org", "wikimedia.org", "wiktionary.org", "wikidata.org"],
+    github: ["github.com", "githubassets.com", "github.blog"],
+    discord: ["discord.com", "discordapp.com", "discord.gg", "discordapp.net"],
+    twitch: ["twitch.tv", "ttvnw.net", "jtvnw.net"],
+    tiktok: ["tiktok.com", "tiktokcdn.com", "byteoversea.com"],
+    whatsapp: ["whatsapp.com", "wa.me"],
+    stackoverflow: [
+      "stackoverflow.com", "stackexchange.com", "sstatic.net", "askubuntu.com",
+      "superuser.com", "serverfault.com"
+    ],
+    yahoo: ["yahoo.com", "yahoo.co.jp", "yimg.com"],
+    ebay: [
+      "ebay.com", "ebay.co.uk", "ebay.de", "ebay.in", "ebay.ca", "ebay.com.au",
+      "ebaystatic.com", "ebayimg.com"
+    ],
+    pinterest: ["pinterest.com", "pinimg.com"],
+    quora: ["quora.com", "quoracdn.net"],
+    spotify: ["spotify.com", "scdn.co", "spotifycdn.com"],
+    dropbox: ["dropbox.com", "dropboxstatic.com"],
+    adobe: ["adobe.com", "adobe.io", "behance.net"],
+    zoom: ["zoom.us", "zoom.com"],
+    openai: ["openai.com", "chatgpt.com", "oaistatic.com", "oaiusercontent.com"],
     chase: ["chase.com"],
     wellsfargo: ["wellsfargo.com"],
     bankofamerica: ["bankofamerica.com"],
@@ -40,15 +84,7 @@
     usps: ["usps.com"],
     irs: ["irs.gov"],
     steam: ["steampowered.com", "steamcommunity.com"],
-    discord: ["discord.com", "discordapp.com"],
     roblox: ["roblox.com"],
-    tiktok: ["tiktok.com"],
-    whatsapp: ["whatsapp.com"],
-    dropbox: ["dropbox.com"],
-    adobe: ["adobe.com"],
-    zoom: ["zoom.us"],
-    ebay: ["ebay.com"],
-    spotify: ["spotify.com"],
     ledger: ["ledger.com"],
     trezor: ["trezor.io"],
     metamask: ["metamask.io"],
@@ -65,8 +101,6 @@
     telegram: ["telegram.org", "t.me"],
     snapchat: ["snapchat.com"],
     protonmail: ["protonmail.com", "proton.me"],
-    openai: ["openai.com", "chatgpt.com"],
-    github: ["github.com"],
     etsy: ["etsy.com"],
     // Student & Educational Platforms
     canvas: ["instructure.com"],
@@ -312,9 +346,25 @@
   }
 
   function isBrandDomain(host) {
-    return Object.values(BRANDS).flat().some(
-      (d) => host === d || host.endsWith("." + d)
-    );
+    if (!host) return false;
+    const h = host.toLowerCase();
+    for (const domains of Object.values(BRANDS)) {
+      for (const d of domains) {
+        if (h === d || h.endsWith("." + d)) return true;
+      }
+    }
+    return false;
+  }
+
+  function getMatchedBrand(host) {
+    if (!host) return null;
+    const h = host.toLowerCase();
+    for (const [brand, domains] of Object.entries(BRANDS)) {
+      for (const d of domains) {
+        if (h === d || h.endsWith("." + d)) return brand;
+      }
+    }
+    return null;
   }
 
   // Official interactive cybersecurity education, training & phishing simulation platforms
@@ -414,21 +464,23 @@
         signals.push(signal("shortener", 15, "med", "URL shortener",
           "Short links conceal the true destination — expand before trusting campus notices."));
       }
-      if (subCount >= 3) {
-        signals.push(signal("subdomains", 15, "med", `${subCount} nested subdomains`,
-          "Long chains like 'harvard.edu.login.secure.evil.com' bury the real domain."));
-      } else if (subCount === 2) {
-        signals.push(signal("subdomains", 6, "low", "Multiple subdomains",
-          "Slightly unusual nesting — verify the true registrable domain."));
-      }
-      const hyphens = (sld.match(/-/g) || []).length;
-      if (hyphens >= 2) {
-        signals.push(signal("hyphens", 10, "low", `${hyphens} hyphens in domain`,
-          "Stuffing like 'student-portal-verify' is a classic phishing tell."));
-      }
-      if (input.length > 100) {
-        signals.push(signal("length", 8, "low", `Very long URL (${input.length} chars)`,
-          "Overlong URLs are often used to push the real domain out of the browser address bar."));
+      if (!isBrandDomain(host)) {
+        if (subCount >= 3) {
+          signals.push(signal("subdomains", 15, "med", `${subCount} nested subdomains`,
+            "Long chains like 'harvard.edu.login.secure.evil.com' bury the real domain."));
+        } else if (subCount === 2) {
+          signals.push(signal("subdomains", 6, "low", "Multiple subdomains",
+            "Slightly unusual nesting — verify the true registrable domain."));
+        }
+        const hyphens = (sld.match(/-/g) || []).length;
+        if (hyphens >= 2) {
+          signals.push(signal("hyphens", 10, "low", `${hyphens} hyphens in domain`,
+            "Stuffing like 'student-portal-verify' is a classic phishing tell."));
+        }
+        if (input.length > 100) {
+          signals.push(signal("length", 8, "low", `Very long URL (${input.length} chars)`,
+            "Overlong URLs are often used to push the real domain out of the browser address bar."));
+        }
       }
 
       // ================= STUDENT SHIELD HEURISTICS =================
@@ -494,6 +546,7 @@
 
         // brand name embedded in hostname while real domain is something else
         for (const [brand, domains] of Object.entries(BRANDS)) {
+          if (brand.length <= 3) continue;
           const owned = domains.some((d) => host === d || host.endsWith("." + d));
           if (!owned && brandLabels.some((l) => labelHasBrand(l, brand))) {
             signals.push(signal("brand-in-host", 35, "high",
@@ -549,7 +602,7 @@
       }
 
       // High-entropy domain
-      if (sld.length >= 12 && shannon(sld) > 3.6 && !COMMON_SLD_WORDS.test(sld)) {
+      if (sld.length >= 12 && shannon(sld) > 3.6 && !COMMON_SLD_WORDS.test(sld) && !isBrandDomain(host)) {
         signals.push(signal("entropy", 12, "med", "Random-looking domain name",
           `High character entropy (${shannon(sld).toFixed(1)} bits) suggests a generated domain.`));
       }
@@ -1043,9 +1096,14 @@
     return score >= 40 ? "suspicious_structure" : "caution_general";
   }
 
-  function generateSummary(level, threatCategory, host, topSignal, isSecEdu) {
+  function generateSummary(level, threatCategory, host, topSignal, isSecEdu, isBrand) {
     if (isSecEdu) {
       return "Verified cybersecurity awareness & phishing simulation quiz (official educational resource).";
+    }
+    if (isBrand && level === "likely safe") {
+      const brand = getMatchedBrand(host);
+      const bName = brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : "Official";
+      return `Verified official ${bName} domain (likely safe). No suspicious phishing indicators detected.`;
     }
     if (level === "likely safe") {
       return "No suspicious phishing indicators detected. Site appears standard.";
@@ -1099,19 +1157,34 @@
   }
 
   function finalize(signals, input, url) {
-    const raw = signals.reduce((s, x) => s + x.weight, 0);
-    const score = Math.max(0, Math.min(100, Math.round(raw)));
-    const level =
-      score >= 70 ? "dangerous" :
-      score >= 40 ? "suspicious" :
-      score >= 15 ? "caution" : "likely safe";
+    const host = url ? url.hostname.toLowerCase() : "";
+    const isBrand = isBrandDomain(host);
+    const isEdu = isGenuineEduDomain(host);
+    const isSecEdu = signals.some((s) => s.id === "security-education");
 
-    const host = url ? url.hostname : "";
+    // Critical real exploits: e.g. cross-domain password posting or unencrypted password form
+    const hasCriticalExploit = signals.some((s) =>
+      s.id === "form-http" || s.id === "form-xdomain" || s.id === "exec-download"
+    );
+
+    let score;
+    let level;
+    if ((isBrand || isEdu || isSecEdu) && !hasCriticalExploit) {
+      score = 0;
+      level = "likely safe";
+    } else {
+      const raw = signals.reduce((s, x) => s + x.weight, 0);
+      score = Math.max(0, Math.min(100, Math.round(raw)));
+      level =
+        score >= 70 ? "dangerous" :
+        score >= 40 ? "suspicious" :
+        score >= 15 ? "caution" : "likely safe";
+    }
+
     const sortedSignals = signals.sort((a, b) => b.weight - a.weight);
-    const threatCategory = categorizeThreat(sortedSignals, score);
+    const threatCategory = score === 0 ? "safe" : categorizeThreat(sortedSignals, score);
     const topSignal = sortedSignals.find((s) => s.weight > 0) || sortedSignals[0];
-    const isSecEdu = sortedSignals.some((s) => s.id === "security-education");
-    const summary = generateSummary(level, threatCategory, host, topSignal, isSecEdu);
+    const summary = generateSummary(level, threatCategory, host, topSignal, isSecEdu, isBrand);
 
     const isStudentTargeted = threatCategory.startsWith("student_") ||
       threatCategory === "financial_aid_scam" ||
@@ -1211,6 +1284,8 @@
     analyze,
     analyzeEmail,
     BRANDS,
+    isBrandDomain,
+    getMatchedBrand,
     levenshtein,
     deobfuscate,
     createFallback
