@@ -301,30 +301,67 @@ async function loadTabResult(rescan = false) {
     const card = document.getElementById("verdict-card");
     if (card) card.classList.add("scanning");
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.id) { paintResult({ ok: false }); return; }
+    let tabs = [];
+    try {
+      tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tabs || !tabs.length) {
+        tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      }
+    } catch (e) {
+      console.warn("tabs.query error:", e);
+    }
 
-    if (tab.url && /^(chrome|edge|devtools|about|chrome-extension):/i.test(tab.url)) {
-      paintResult({ ok: false, host: tab.url });
+    const tab = tabs && tabs[0];
+    if (!tab || !tab.id) {
+      paintResult({ ok: false, host: "No active tab" });
       return;
     }
 
+    const rawUrl = tab.url || tab.pendingUrl || "";
+
+    // Internal browser pages cannot be injected
+    if (!rawUrl || /^(chrome|edge|devtools|about|chrome-extension):/i.test(rawUrl)) {
+      paintResult({ ok: false, host: rawUrl || "Internal Browser Page" });
+      return;
+    }
+
+    // 1. INSTANT LOCAL PAINT: Never keep the user waiting on a frozen "Scanning..." spinner!
+    let localRes = null;
+    if (window.NETRA && typeof window.NETRA.analyzeUrl === "function") {
+      localRes = window.NETRA.analyzeUrl(rawUrl);
+      paintResult(localRes);
+    }
+
+    // 2. Query background memory cache for enriched / email / Gemini result
+    try {
+      chrome.runtime.sendMessage({ type: "netra-get-cached-result", tabId: tab.id }, (cached) => {
+        if (!chrome.runtime.lastError && cached && cached.result) {
+          paintResult(cached.result);
+        } else if (aiEnabled && rawUrl.startsWith("http")) {
+          // Trigger background Gemini analysis for active tab if not yet analyzed
+          try {
+            chrome.runtime.sendMessage({
+              type: "netra-trigger-gemini",
+              tabId: tab.id,
+              url: rawUrl,
+              score: localRes ? localRes.score : 0,
+              signals: localRes ? localRes.signals : []
+            });
+          } catch (e) {}
+        }
+      });
+    } catch (e) {}
+
+    // 3. Query content script for live in-page DOM scanner results (non-blocking)
     const msgType = rescan ? "netra-rescan" : "netra-get-result";
-    chrome.tabs.sendMessage(tab.id, { type: msgType }, (response) => {
-      if (chrome.runtime.lastError || !response) {
-        chrome.runtime.sendMessage({ type: "netra-get-cached-result", tabId: tab.id }, (cached) => {
-          if (cached && cached.result) {
-            paintResult(cached.result);
-          } else if (window.NETRA && tab.url) {
-            paintResult(window.NETRA.analyzeUrl(tab.url));
-          } else {
-            paintResult({ ok: false, host: tab.url });
-          }
-        });
-      } else {
-        paintResult(response);
-      }
-    });
+    try {
+      chrome.tabs.sendMessage(tab.id, { type: msgType }, (response) => {
+        if (chrome.runtime.lastError) return; // Cleanly ignore disconnected tabs
+        if (response) {
+          paintResult(response);
+        }
+      });
+    } catch (e) {}
   } catch (err) {
     console.warn("NETRA popup error:", err);
     paintResult({ ok: false });
@@ -346,9 +383,52 @@ document.getElementById("btn-rescan").addEventListener("click", function() {
 document.getElementById("btn-analyze").addEventListener("click", () => {
   const raw = document.getElementById("url-input").value.trim();
   const res = document.getElementById("analyze-res");
-  if (!raw) { res.innerHTML = '<div style="color:var(--muted);font-size:10.5px;padding:4px 0;">Paste a URL to inspect.</div>'; return; }
-  if (!window.NETRA) { res.innerHTML = '<div style="color:var(--danger-c);font-size:10.5px;">Engine not loaded. Reload extension.</div>'; return; }
-  renderInspectResult(window.NETRA.analyzeUrl(raw), res);
+  if (!raw) {
+    res.innerHTML = '<div style="color:var(--muted);font-size:10.5px;padding:4px 0;">Paste a URL to inspect.</div>';
+    return;
+  }
+  if (!window.NETRA) {
+    res.innerHTML = '<div style="color:var(--danger-c);font-size:10.5px;">Engine not loaded. Reload extension.</div>';
+    return;
+  }
+
+  const inspected = window.NETRA.analyzeUrl(raw);
+  renderInspectResult(inspected, res);
+
+  // If AI is enabled, trigger live Gemini AI analysis for the inspected link
+  if (aiEnabled && (raw.startsWith("http") || raw.includes("."))) {
+    const aiTargetUrl = raw.startsWith("http") ? raw : `https://${raw}`;
+    const aiBox = document.createElement("div");
+    aiBox.style.cssText = "font-size:10px;color:var(--violet);padding:6px 0 2px;display:flex;align-items:center;gap:6px;";
+    aiBox.innerHTML = '<span class="ai-spinner" style="width:11px;height:11px;"></span> Gemini AI analyzing link…';
+    res.appendChild(aiBox);
+
+    try {
+      chrome.runtime.sendMessage({
+        type: "netra-inspect-gemini",
+        url: aiTargetUrl,
+        score: inspected.score,
+        signals: inspected.signals
+      }, (resp) => {
+        if (!chrome.runtime.lastError && resp && resp.geminiResult) {
+          const g = resp.geminiResult;
+          aiBox.innerHTML = `
+            <div style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);border-radius:6px;padding:7px 10px;margin-top:6px;color:#e2e8f0;line-height:1.4;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                <span style="color:#c084fc;font-weight:800;font-size:9.5px;letter-spacing:0.5px;">✦ GEMINI AI VERDICT:</span>
+                <span style="font-weight:800;font-size:10px;color:${g.verdict==='Phishing'?'#f43f5e':g.verdict==='Safe'?'#10b981':'#f59e0b'}">${g.verdict.toUpperCase()} · ${g.geminiScore}/100</span>
+              </div>
+              <div style="font-size:10px;color:#cbd5e1;">${g.reasoning || ""}</div>
+            </div>
+          `;
+        } else {
+          aiBox.remove();
+        }
+      });
+    } catch (e) {
+      aiBox.remove();
+    }
+  }
 });
 
 document.getElementById("btn-clear").addEventListener("click", () => {

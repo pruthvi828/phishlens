@@ -206,6 +206,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (sendResponse) sendResponse({ ok: !!cached, result: cached || null });
       return true;
     }
+
+    // Popup requesting live Gemini AI analysis for active tab if not already analyzed
+    if (msg.type === "netra-trigger-gemini" && msg.url && globalThis.NETRA_Gemini) {
+      const tabId = msg.tabId;
+      chrome.storage.local.get(["netra_ai_enabled"], (prefs) => {
+        if (prefs.netra_ai_enabled === false) return;
+        NETRA_Gemini.callGemini(msg.url, msg.score || 0, msg.signals || [], "")
+          .then((geminiResult) => {
+            if (!geminiResult) return;
+            const current = tabAnalysisCache.get(tabId) || { url: msg.url, score: msg.score || 0, signals: msg.signals || [] };
+            const enriched = NETRA_Gemini.mergeResults(current, geminiResult);
+            tabAnalysisCache.set(tabId, enriched);
+            chrome.runtime.sendMessage({ type: "netra-gemini-update", result: enriched, tabId }).catch(() => {});
+          })
+          .catch((err) => console.warn("[NETRA-Gemini] trigger error:", err));
+      });
+      if (sendResponse) sendResponse({ ok: true });
+      return true;
+    }
+
+    // Popup link inspector requesting Gemini analysis for arbitrary pasted link
+    if (msg.type === "netra-inspect-gemini" && msg.url && globalThis.NETRA_Gemini) {
+      NETRA_Gemini.callGemini(msg.url, msg.score || 0, msg.signals || [], "")
+        .then((geminiResult) => {
+          if (sendResponse) sendResponse({ ok: !!geminiResult, geminiResult });
+        })
+        .catch((err) => {
+          if (sendResponse) sendResponse({ ok: false, error: err.message });
+        });
+      return true;
+    }
   } catch (err) {
     console.error("NETRA background onMessage error caught gracefully:", err);
     if (sendResponse) sendResponse({ ok: false, error: err.message });
