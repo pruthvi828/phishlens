@@ -3,147 +3,528 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PhishLens Student Shield — Real-time Client-Side Phishing Protection</title>
+<title>NETRA — Network Eye for Threat Recognition & Analysis</title>
+<meta name="description" content="NETRA is a 100% local, real-time phishing detection engine. Zero network calls, zero data collection. Detect university portal spoofing, credential harvesting, and financial scams instantly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box}
-  body{margin:0;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0b1120;color:#e2e8f0}
-  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
-  header{padding:48px 0 24px;text-align:center}
-  h1{font-size:38px;margin:0;background:linear-gradient(90deg,#38bdf8,#818cf8);
-    -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
-  .tag{color:#94a3b8;margin-top:8px;font-size:16px}
-  .badges{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .badge{border:1px solid #334155;border-radius:999px;padding:3px 12px;font-size:12px;color:#94a3b8;background:#0f172a}
-  .badge.highlight{border-color:#38bdf8;color:#38bdf8}
-  .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:22px;margin:18px 0}
-  h2{margin:0 0 12px;font-size:19px;color:#f8fafc}
-  input[type=text]{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;
-    border-radius:8px;padding:12px 14px;font:14px ui-monospace,monospace}
-  input[type=text]:focus{outline:none;border-color:#38bdf8}
-  button{margin-top:10px;background:#0284c7;border:0;color:#ffffff;font-weight:700;
-    padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;transition:background .15s}
-  button:hover{background:#0369a1}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .chip{background:#0f172a;border:1px solid #334155;color:#7dd3fc;border-radius:6px;
-    padding:5px 10px;font:12px ui-monospace,monospace;cursor:pointer}
-  .chip:hover{border-color:#38bdf8}
-  #out{margin-top:16px;display:none}
-  .gauge{display:flex;align-items:center;gap:14px;margin-bottom:12px}
-  .ring{width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:22px;flex-shrink:0}
-  .lvl{font-weight:800;text-transform:uppercase;letter-spacing:.6px}
-  .sig{border-left:3px solid #475569;background:#0f172a;border-radius:6px;padding:9px 12px;margin:8px 0}
-  .sig b{display:block;font-size:13px}
-  .sig span{color:#94a3b8;font-size:12px}
-  .sig.high{border-color:#dc2626}.sig.med{border-color:#ea580c}.sig.low{border-color:#ca8a04}.sig.good{border-color:#16a34a}
-  .student-advice-box{background:#0f172a;border-left:3px solid #38bdf8;padding:12px;border-radius:6px;margin:12px 0}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-  .mini{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px}
-  .mini b{color:#7dd3fc;font-size:13px}
-  .mini p{margin:6px 0 0;color:#94a3b8;font-size:12px}
-  a{color:#38bdf8}
-  code{background:#0f172a;padding:2px 6px;border-radius:4px;font-size:12px;color:#7dd3fc}
-  ol{color:#94a3b8;font-size:14px;padding-left:20px}
-  li{margin:4px 0}
-  footer{color:#64748b;font-size:12px;text-align:center;padding:30px 0 50px}
-  .demo-link{display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;
-    padding:12px 14px;margin:8px 0;text-decoration:none;color:#e2e8f0;transition:border-color .15s}
-  .demo-link:hover{border-color:#38bdf8}
-  .demo-link small{color:#94a3b8;display:block;margin-top:2px}
+  :root {
+    --bg:       #060a12;
+    --surface:  #0d1422;
+    --surface2: #111827;
+    --border:   rgba(0,240,200,0.1);
+    --bhi:      rgba(0,240,200,0.3);
+    --cyan:     #00f0c8;
+    --cyan2:    #00c4a4;
+    --red:      #ff3b5c;
+    --orange:   #ff7b00;
+    --amber:    #f0a500;
+    --green:    #00e87a;
+    --text:     #ddeef5;
+    --muted:    #6b8196;
+    --r:        12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  ::selection { background: rgba(0,240,200,0.25); }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% -10%, rgba(0,240,200,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 90% 80%, rgba(0,200,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+
+  /* ── NAVBAR ── */
+  nav {
+    display: flex;
+    align-items: center;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .nav-eye {
+    width: 36px; height: 36px;
+    background: radial-gradient(circle at 38% 38%, rgba(0,240,200,0.2), rgba(0,240,200,0.04));
+    border: 1.5px solid var(--cyan2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 18px rgba(0,240,200,0.15);
+  }
+  .nav-name {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    text-shadow: 0 0 30px rgba(0,240,200,0.4);
+  }
+  .nav-tagline {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+  }
+  .nav-badges { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+  .badge.hi { border-color: var(--bhi); color: var(--cyan); }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 60px 0 40px;
+  }
+  .hero-eyeball {
+    width: 80px; height: 80px;
+    margin: 0 auto 20px;
+    background: radial-gradient(circle at 38% 38%, rgba(0,240,200,0.18), rgba(0,240,200,0.03));
+    border: 2px solid var(--cyan2);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+    box-shadow: 0 0 40px rgba(0,240,200,0.18), 0 0 80px rgba(0,240,200,0.06);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 40px rgba(0,240,200,0.18), 0 0 80px rgba(0,240,200,0.06); }
+    50%      { box-shadow: 0 0 60px rgba(0,240,200,0.3),  0 0 120px rgba(0,240,200,0.1); }
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--cyan) 0%, #00aaff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero-sub {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 580px;
+    margin: 0 auto 24px;
+    line-height: 1.6;
+  }
+
+  /* ── ANALYZER CARD ── */
+  .analyzer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .analyzer-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.5;
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .url-input-wrap { display: flex; gap: 10px; }
+  #u {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font: 13px 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #u:focus {
+    border-color: var(--cyan2);
+    box-shadow: 0 0 0 3px rgba(0,240,200,0.08);
+  }
+  #u::placeholder { color: var(--muted); }
+  #go {
+    background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+    border: 0;
+    color: #000;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  #go:hover { filter: brightness(1.12); box-shadow: 0 6px 24px rgba(0,240,200,0.3); }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: #7dd3fc;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font: 11px 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  .chip:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,240,200,0.06); }
+
+  /* Result box */
+  #out { display: none; margin-top: 18px; }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .gauge-ring {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 22px;
+    flex-shrink: 0;
+    transition: all 0.4s;
+    position: relative;
+  }
+  .gauge-ring small { font-size: 9px; font-weight: 700; letter-spacing: 1px; opacity: 0.8; }
+
+  .result-info { flex: 1; }
+  .result-level {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+  .result-host {
+    font: 11px 'JetBrains Mono', monospace;
+    color: var(--muted);
+    word-break: break-all;
+  }
+  .result-summary {
+    font-size: 13px;
+    margin-top: 5px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .advice-box {
+    background: rgba(0,240,200,0.05);
+    border: 1px solid rgba(0,240,200,0.18);
+    border-radius: 8px;
+    padding: 11px 13px;
+    margin: 10px 0;
+    font-size: 12px;
+  }
+  .advice-box b {
+    display: block;
+    color: var(--cyan);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+  }
+
+  .sig-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 9px 11px;
+    background: var(--surface2);
+    border-radius: 7px;
+    border-left: 3px solid var(--muted);
+    margin-bottom: 6px;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:none; } }
+  .sig-item.high { border-color: var(--red); }
+  .sig-item.med  { border-color: var(--orange); }
+  .sig-item.low  { border-color: var(--amber); }
+  .sig-item.good { border-color: var(--green); }
+  .sig-item .sicon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .sig-item b { display: block; font-size: 12px; font-weight: 600; }
+  .sig-item span { color: var(--muted); font-size: 11.5px; line-height: 1.4; display: block; margin-top: 1px; }
+
+  /* ── HOW IT WORKS ── */
+  .section { margin-bottom: 20px; }
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 22px;
+  }
+  .section-card h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: #f0f8ff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .feature {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px;
+    transition: border-color 0.2s;
+  }
+  .feature:hover { border-color: var(--bhi); }
+  .feature-icon { font-size: 20px; margin-bottom: 7px; }
+  .feature b { display: block; font-size: 12px; font-weight: 700; color: var(--cyan); margin-bottom: 4px; }
+  .feature p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* ── INSTALL ── */
+  .install-steps {
+    counter-reset: steps;
+    list-style: none;
+  }
+  .install-steps li {
+    counter-increment: steps;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .install-steps li:last-child { border-bottom: none; }
+  .install-steps li::before {
+    content: counter(steps);
+    width: 24px; height: 24px;
+    background: rgba(0,240,200,0.1);
+    border: 1px solid var(--bhi);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--cyan);
+    flex-shrink: 0;
+  }
+  code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font: 12px 'JetBrains Mono', monospace;
+    color: var(--cyan);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 30px 0 50px;
+    color: var(--muted);
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+    line-height: 1.9;
+  }
+  footer a { color: var(--cyan); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* separator line */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0;
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-<header>
-  <h1>🛡️ Utkarsh Ki Fish</h1>
-  <div class="tag">Real-time, zero-network phishing protection engineered for students &amp; university communities.</div>
-  <div class="badges">
-    <span class="badge highlight">Utkarsh Ki Fish v2.0</span>
-    <span class="badge">100% Client-Side MV3</span>
-    <span class="badge">No Paid APIs / Zero Network Calls</span>
-    <span class="badge">MIT Licensed</span>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <div class="nav-eye">👁</div>
+      <div>
+        <div class="nav-name">NETRA</div>
+        <div class="nav-tagline">Network Eye for Threat Recognition &amp; Analysis</div>
+      </div>
+    </a>
+    <div class="nav-badges">
+      <span class="badge hi">v3.0</span>
+      <span class="badge">100% Local</span>
+      <span class="badge">MV3</span>
+      <span class="badge">MIT</span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyeball">👁</div>
+    <h1>Real-Time Phishing<br><span>Detection Engine</span></h1>
+    <p class="hero-sub">
+      NETRA watches every URL and page you visit—locally, instantly, privately.
+      No servers. No API keys. No data collection. Just pure heuristic intelligence.
+    </p>
   </div>
-</header>
 
-<div class="card">
-  <h2>🔍 Analyze a Link — Instant Local Inspection</h2>
-  <input type="text" id="u" placeholder="https://harvard.edu.login-portal.net/verify" autofocus>
-  <button id="go">Analyze Link Locally</button>
-  <div class="chips" id="chips"></div>
-  <div id="out"></div>
-</div>
+  <!-- ANALYZER -->
+  <div class="analyzer-card">
+    <div class="card-label">👁 Instant URL Inspection</div>
+    <div class="url-input-wrap">
+      <input type="text" id="u" placeholder="https://harvard.edu.login-portal.net/verify" autofocus>
+      <button id="go">Analyze</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div id="out"></div>
+  </div>
 
-<div class="card">
-  <h2>🎣 Live Student Phishing Bait Demos (Test the Chrome Extension)</h2>
-  <p style="color:#94a3b8;font-size:13px;margin-top:0">
-    These live demo pages simulate common student phishing vectors. With the extension installed in Chrome, visiting them automatically triggers real-time in-page Shadow DOM warning banners and desktop notifications.
-  </p>
-  <a class="demo-link" href="demo/student-portal-phish.html">
-    🚨 <b>Fake University SSO Portal (Account Suspended Scam)</b>
-    <small>Deceptive .edu subdomain · Password form posting unencrypted over HTTP · Student ID harvesting · 24-hour panic language</small>
-  </a>
-  <a class="demo-link" href="demo/campus-aid-scam.html">
-    💸 <b>Emergency Student Bursary &amp; Tuition Relief Scam</b>
-    <small>Fictitious $1,850 grant · Solicits student SSN, bank routing, and account credentials · Unofficial commercial domain</small>
-  </a>
-  <a class="demo-link" href="demo/paypal-verify.html">
-    ⚠️ <b>Fake Brand Credential Harvester (PayPal Clone)</b>
-    <small>Cross-site form submission · Urgency copy · CVV harvesting · Hidden iframes</small>
-  </a>
-  <a class="demo-link" href="demo/legit-university.html">
-    ✅ <b>Verified University Resource Page (Control)</b>
-    <small>Clean official campus info · Zero suspicious indicators → Tests false-positive resistance (likely safe verdict)</small>
-  </a>
-</div>
-
-<div class="card">
-  <h2>How Student Shield Works (100% Local Heuristics)</h2>
-  <div class="grid">
-    <div class="mini">
-      <b>🎓 .EDU Spoofing &amp; Portal Radar</b>
-      <p>Detects attackers parking fake <code>.edu</code> labels or university names inside subdomains (e.g. <code>mit.edu.portal-login.com</code>) to fool students.</p>
-    </div>
-    <div class="mini">
-      <b>💸 Financial Aid &amp; Tuition Scams</b>
-      <p>Catches unauthorized third-party sites using FAFSA, tuition refund, or student bursary lures to harvest banking and SSN data.</p>
-    </div>
-    <div class="mini">
-      <b>🔒 Credential-Harvest Form Traps</b>
-      <p>Inspects DOM forms in real-time for password inputs posting off-domain, over unencrypted HTTP, or targeting Student IDs / NetIDs.</p>
-    </div>
-    <div class="mini">
-      <b>🔔 Deduplicated Desktop Alerts</b>
-      <p>Dispatches high-priority desktop notifications on dangerous student sites with cooldowns that prevent notification spam.</p>
+  <!-- HOW IT WORKS -->
+  <div class="section">
+    <div class="section-card">
+      <h2>⚙️ How NETRA Works</h2>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon">🎓</div>
+          <b>.EDU Spoofing Radar</b>
+          <p>Detects attackers parking fake <code>.edu</code> labels or university names inside subdomains to fool students.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔤</div>
+          <b>Homoglyph Detection</b>
+          <p>Catches Cyrillic lookalikes, l→1, o→0, rn→m substitutions and Unicode confusables in domain names.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔒</div>
+          <b>Credential Trap Scanner</b>
+          <p>Inspects DOM forms in real-time for password inputs posting off-domain, over HTTP, or harvesting NetIDs.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💸</div>
+          <b>Financial Aid Lure Detection</b>
+          <p>Catches FAFSA, tuition refund, and student bursary lures on commercial domains harvesting banking data.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔔</div>
+          <b>Desktop Alerts</b>
+          <p>Fires deduplicated, high-priority desktop notifications on dangerous pages with smart cooldowns.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🧠</div>
+          <b>Typosquatting Engine</b>
+          <p>Levenshtein distance scoring against 60+ top brands. Catches paypa1, g00gle, amaz0n and hundreds more.</p>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <h2>Install in Chrome (60 Seconds)</h2>
-  <ol>
-    <li>Open Chrome and navigate to <code>chrome://extensions</code></li>
-    <li>Toggle <b>Developer mode</b> ON in the top-right corner.</li>
-    <li>Click <b>Load unpacked</b> and select the <code>extension/</code> folder.</li>
-    <li>Visit any student demo link above to see the automatic in-page warning banner and desktop alerts in action!</li>
-  </ol>
-</div>
+  <!-- INSTALL -->
+  <div class="section">
+    <div class="section-card">
+      <h2>🚀 Install in Chrome</h2>
+      <ol class="install-steps">
+        <li>Open Chrome and navigate to <code>chrome://extensions</code></li>
+        <li>Toggle <b>Developer mode</b> ON in the top-right corner.</li>
+        <li>Click <b>Load unpacked</b> and select the <code>extension/</code> folder from this repo.</li>
+        <li>The NETRA 👁 icon appears in your toolbar — click it to see the live threat dashboard.</li>
+      </ol>
+    </div>
+  </div>
 
-<footer>
-  PhishLens Student Shield · Preserves Original MIT License ·
-  Attribution: Based on <a href="https://github.com/Georgefifth/phishlens">Georgefifth/phishlens</a><br>
-  Engineered for the Student Phishing Protection Challenge.
-</footer>
+  <footer>
+    NETRA · Real-Time Phishing Detection · MIT License ·
+    <a href="https://github.com/arnavnair13/cinderellatcs" target="_blank">GitHub Repository</a><br>
+    All heuristics execute 100% locally. Zero logs, zero uploads, zero tracking.
+  </footer>
 </div>
 
 <script src="engine.js"></script>
 <script>
 const COLORS = {
-  dangerous: "#dc2626",
-  suspicious: "#ea580c",
-  caution: "#ca8a04",
-  "likely safe": "#16a34a",
-  unknown: "#64748b"
+  dangerous:     "#ff3b5c",
+  suspicious:    "#ff7b00",
+  caution:       "#f0a500",
+  "likely safe": "#00e87a",
+  unknown:       "#6b8196"
 };
+const ICONS = {
+  dangerous:     "🔴",
+  suspicious:    "🟠",
+  caution:       "🟡",
+  "likely safe": "🟢",
+  unknown:       "⚪"
+};
+const SIG_ICON = { high:"⚠️", med:"🔶", low:"🔷", good:"✅" };
 
 const SAMPLES = [
   "https://harvard.edu.login-portal.net/verify",
@@ -174,36 +555,46 @@ function run() {
   out.style.display = "block";
 
   if (!r.ok) {
-    out.innerHTML = `<div class="sig med"><b>Could not parse</b><span>${r.error}</span></div>`;
+    out.innerHTML = `<div class="sig-item med"><span class="sicon">⚠️</span><div><b>Parse Error</b><span>${r.error || "Could not parse URL."}</span></div></div>`;
     return;
   }
 
   let adviceHtml = "";
   if (r.studentProtection && r.studentProtection.isStudentTargeted) {
     adviceHtml = `
-      <div class="student-advice-box">
-        <b style="color:#7dd3fc;display:block;margin-bottom:4px;">🛡️ Student Shield Recommendation:</b>
-        <div style="font-size:12px;color:#e2e8f0;">${r.studentProtection.advice[0] || ""}</div>
-      </div>
-    `;
+      <div class="advice-box">
+        <b>🎓 Student Threat Detected</b>
+        ${r.studentProtection.advice[0] || ""}
+      </div>`;
   }
 
+  const sigHtml = (r.signals || []).map(s =>
+    `<div class="sig-item ${s.severity}">
+      <span class="sicon">${SIG_ICON[s.severity] || "🔶"}</span>
+      <div><b>${s.title}</b><span>${s.detail}</span></div>
+     </div>`
+  ).join("");
+
   out.innerHTML = `
-    <div class="gauge">
-      <div class="ring" style="background:${c}22;border:4px solid ${c};color:${c};">${r.score}</div>
-      <div>
-        <div class="lvl" style="color:${c};">${r.level} (${r.score}/100)</div>
-        <div style="color:#94a3b8;font-size:12px;word-break:break-all;">${r.host || ""}</div>
-        <div style="color:#e2e8f0;font-size:12px;margin-top:4px;">${r.summary || ""}</div>
+    <div class="result-row">
+      <div class="gauge-ring" style="background:${c}15;border:4px solid ${c};color:${c};">
+        ${r.score}<small>RISK</small>
+      </div>
+      <div class="result-info">
+        <div class="result-level" style="background:${c}22;color:${c};border:1px solid ${c}44;">
+          ${ICONS[r.level] || ""} ${r.level}
+        </div>
+        <div class="result-host">${r.host || ""}</div>
+        <div class="result-summary">${r.summary || ""}</div>
       </div>
     </div>
     ${adviceHtml}
-  ` + (r.signals || []).map((s) =>
-    `<div class="sig ${s.severity}"><b>${s.title}</b><span>${s.detail}</span></div>`).join("");
+    ${sigHtml}
+  `;
 }
 
 document.getElementById("go").onclick = run;
-document.getElementById("u").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+document.getElementById("u").addEventListener("keydown", e => { if (e.key === "Enter") run(); });
 </script>
 </body>
 </html>

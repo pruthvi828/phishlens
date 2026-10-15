@@ -3,220 +3,398 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PhishLens Student Shield</title>
+<title>NETRA — Threat Eye</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-main: #0b1120;
-    --bg-card: #1e293b;
-    --bg-card-subtle: #172033;
-    --border-color: #334155;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --accent-blue: #38bdf8;
-    --danger: #dc2626;
-    --suspicious: #ea580c;
-    --caution: #ca8a04;
-    --safe: #16a34a;
+    --bg:        #060a12;
+    --surface:   #0d1422;
+    --surface2:  #111827;
+    --border:    rgba(0,240,200,0.12);
+    --border-hi: rgba(0,240,200,0.35);
+    --cyan:      #00f0c8;
+    --cyan-dim:  #00c4a4;
+    --red:       #ff3b5c;
+    --orange:    #ff7b00;
+    --amber:     #f0a500;
+    --green:     #00e87a;
+    --text:      #e8f4f8;
+    --muted:     #6b8196;
+    --radius:    10px;
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     width: 360px;
-    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg-main);
-    color: var(--text-primary);
+    min-height: 480px;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
   }
-  header {
-    padding: 14px 16px;
+
+  /* ── TOP BAR ── */
+  .topbar {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-    border-bottom: 1px solid var(--border-color);
+    padding: 12px 14px;
+    background: linear-gradient(180deg, #0d1b2a 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
   }
-  header img { width: 28px; height: 28px; border-radius: 6px; }
-  .header-titles h1 { font-size: 15px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 6px; }
-  .header-titles .badge { font-size: 10px; background: #0284c7; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
-  .header-titles .sub { color: var(--text-secondary); font-size: 11px; }
+  .topbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.4;
+  }
 
-  section { padding: 14px 16px; }
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+  .netra-logo {
+    width: 32px; height: 32px;
+    background: radial-gradient(circle at 40% 40%, #00f0c844, #00f0c808);
+    border: 1.5px solid var(--cyan-dim);
     border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(0,240,200,0.2);
   }
-  .gauge-row {
+
+  .brand { flex: 1; }
+  .brand-name {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 2.5px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(0,240,200,0.5);
+  }
+  .brand-sub {
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+
+  .rescan-btn {
+    background: transparent;
+    border: 1px solid var(--border-hi);
+    color: var(--cyan);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .rescan-btn:hover {
+    background: rgba(0,240,200,0.1);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,240,200,0.2);
+  }
+
+  /* ── MAIN VERDICT CARD ── */
+  .verdict-card {
+    margin: 12px 12px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .verdict-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,240,200,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .verdict-row {
     display: flex;
     align-items: center;
     gap: 14px;
   }
-  .ring {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 18px;
+
+  /* Eye gauge */
+  .eye-gauge {
+    position: relative;
+    width: 68px; height: 68px;
     flex-shrink: 0;
-    transition: all 0.3s ease;
   }
-  .ring small { font-size: 9px; opacity: 0.8; font-weight: 600; text-transform: uppercase; }
-  .gauge-info { flex: 1; overflow: hidden; }
-  .lvl-pill {
+  .eye-gauge svg {
+    width: 68px; height: 68px;
+    transform: rotate(-90deg);
+  }
+  .eye-gauge .track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 5; }
+  .eye-gauge .arc   { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1), stroke 0.4s; }
+  .eye-center {
+    position: absolute;
+    inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .eye-score {
+    font-size: 19px;
+    font-weight: 900;
+    letter-spacing: -1px;
+  }
+  .eye-label {
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .verdict-info { flex: 1; min-width: 0; }
+  .verdict-level {
     display: inline-block;
-    font-weight: 700;
+    font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    padding: 2px 8px;
+    letter-spacing: 1.2px;
+    padding: 3px 9px;
     border-radius: 4px;
+    margin-bottom: 5px;
   }
-  .host-label {
-    color: var(--text-secondary);
+  .verdict-host {
     font-size: 11px;
+    color: var(--muted);
     word-break: break-all;
-    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
   }
-  .summary-label {
-    font-size: 12px;
-    margin-top: 6px;
+  .verdict-summary {
+    font-size: 11.5px;
+    margin-top: 5px;
+    color: var(--text);
     font-weight: 500;
-    color: #e2e8f0;
+    line-height: 1.4;
   }
 
+  /* student box */
   .student-box {
-    background: #0f172a;
-    border-left: 3px solid var(--accent-blue);
-    border-radius: 4px;
+    margin-top: 10px;
+    background: rgba(0,240,200,0.05);
+    border: 1px solid rgba(0,240,200,0.18);
+    border-radius: 7px;
     padding: 8px 10px;
-    margin-top: 8px;
     font-size: 11px;
+    display: none;
   }
-  .student-box b { color: #7dd3fc; display: block; margin-bottom: 2px; }
-
-  .section-title {
-    font-size: 11px;
+  .student-box b {
+    display: block;
+    color: var(--cyan);
+    font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  /* ── SIGNALS ── */
+  .section-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 6px;
+    padding: 10px 14px 6px;
+  }
+  .section-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex: 1;
+  }
+  .section-count {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  ul.signals-list { list-style: none; }
-  ul.signals-list li {
+  .signals-list {
+    list-style: none;
+    padding: 0 12px;
+  }
+  .signals-list li {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
     padding: 7px 10px;
-    border-left: 3px solid #64748b;
-    background: #172033;
-    border-radius: 4px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
+    background: var(--surface2);
+    border-radius: 7px;
+    border-left: 3px solid var(--muted);
     font-size: 11px;
+    animation: fadeIn 0.3s ease;
   }
-  ul.signals-list li b { display: block; font-size: 11px; margin-bottom: 2px; }
-  ul.signals-list li span { color: var(--text-secondary); line-height: 1.35; display: block; }
-  ul.signals-list li.high { border-color: var(--danger); }
-  ul.signals-list li.med { border-color: var(--suspicious); }
-  ul.signals-list li.low { border-color: var(--caution); }
-  ul.signals-list li.good { border-color: var(--safe); }
+  .signals-list li.high { border-color: var(--red); }
+  .signals-list li.med  { border-color: var(--orange); }
+  .signals-list li.low  { border-color: var(--amber); }
+  .signals-list li.good { border-color: var(--green); }
 
-  .analyzer-box {
-    margin-top: 8px;
+  .sig-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .sig-body b { display: block; font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+  .sig-body span { color: var(--muted); font-size: 10.5px; line-height: 1.35; display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ── ANALYZER ── */
+  .analyzer-section {
+    padding: 4px 12px 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 6px;
   }
-  textarea {
+  .analyzer-section .section-header { padding: 10px 2px 6px; }
+
+  .input-wrap { position: relative; }
+  .url-input {
     width: 100%;
-    background: #0f172a;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    border-radius: 6px;
-    padding: 8px;
-    font: 11px monospace;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 10px;
+    font: 11px 'JetBrains Mono', monospace;
     resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.4;
   }
-  textarea:focus { outline: none; border-color: var(--accent-blue); }
-  .btn-row { display: flex; gap: 8px; margin-top: 8px; }
-  button {
-    background: #0284c7;
-    border: 0;
-    color: #ffffff;
-    font-weight: 600;
-    padding: 7px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background 0.15s ease;
-  }
-  button:hover { background: #0369a1; }
-  button.secondary { background: #334155; }
-  button.secondary:hover { background: #475569; }
+  .url-input:focus { border-color: var(--cyan-dim); box-shadow: 0 0 0 2px rgba(0,240,200,0.08); }
+  .url-input::placeholder { color: var(--muted); }
 
+  .btn-row { display: flex; gap: 7px; margin-top: 7px; }
+  .btn {
+    background: linear-gradient(135deg, #00c4a4, #007a6a);
+    border: 0;
+    color: #000;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    flex: 1;
+  }
+  .btn:hover { filter: brightness(1.15); box-shadow: 0 4px 14px rgba(0,240,200,0.25); }
+  .btn.ghost {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+  .btn.ghost:hover { border-color: var(--border-hi); color: var(--text); }
+
+  #analyze-res { margin-top: 9px; }
+
+  /* ── FOOTER ── */
   footer {
     text-align: center;
-    font-size: 10px;
-    color: #64748b;
-    padding: 0 16px 12px;
+    padding: 7px 12px 10px;
+    font-size: 9px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.3px;
+  }
+
+  /* scan line animation */
+  @keyframes scanline {
+    0%   { top: -2px; opacity: 0.6; }
+    100% { top: 100%; opacity: 0; }
+  }
+  .scanning .verdict-card::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: -2px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    animation: scanline 1.2s ease-in-out infinite;
   }
 </style>
 </head>
 <body>
-<header>
-  <img src="icons/icon48.png" alt="Utkarsh Ki Fish">
-  <div class="header-titles">
-    <h1>Utkarsh Ki Fish <span class="badge">Shield</span></h1>
-    <div class="sub">Local, zero-network phishing protection</div>
-  </div>
-</header>
 
-<section>
-  <div class="card">
-    <div class="section-title">
-      <span>Active Tab Verdict</span>
-      <button class="secondary" id="btn-rescan" style="padding:2px 8px;font-size:10px;">Rescan</button>
-    </div>
-    <div class="gauge-row">
-      <div class="ring" id="ring">
-        <span id="score-num">–</span>
-        <small>/100</small>
+<div class="topbar">
+  <div class="netra-logo">👁</div>
+  <div class="brand">
+    <div class="brand-name">NETRA</div>
+    <div class="brand-sub">Network Eye for Threat Recognition &amp; Analysis</div>
+  </div>
+  <button class="rescan-btn" id="btn-rescan">↺ Rescan</button>
+</div>
+
+<div class="verdict-card scanning" id="verdict-card">
+  <div class="verdict-row">
+    <div class="eye-gauge">
+      <svg viewBox="0 0 68 68">
+        <circle class="track" cx="34" cy="34" r="28"/>
+        <circle class="arc" id="gauge-arc" cx="34" cy="34" r="28"
+          stroke-dasharray="175.9"
+          stroke-dashoffset="175.9"
+          stroke="var(--cyan)"/>
+      </svg>
+      <div class="eye-center">
+        <span class="eye-score" id="score-num">—</span>
+        <span class="eye-label">RISK</span>
       </div>
-      <div class="gauge-info">
-        <div><span class="lvl-pill" id="lvl">Scanning…</span></div>
-        <div class="host-label" id="host">Waiting for page analysis…</div>
-        <div class="summary-label" id="summary"></div>
-      </div>
     </div>
-    <div class="student-box" id="student-box" style="display:none;">
-      <b>🛡️ Student Protection Alert</b>
-      <div id="student-advice"></div>
+    <div class="verdict-info">
+      <span class="verdict-level" id="lvl" style="background:rgba(107,129,150,0.15);color:var(--muted);">Scanning…</span>
+      <div class="verdict-host" id="host">Evaluating page…</div>
+      <div class="verdict-summary" id="summary"></div>
     </div>
   </div>
-
-  <div class="section-title">Detected Signals</div>
-  <ul class="signals-list" id="sigs">
-    <li class="good"><b>Scanning</b><span>Evaluating tab heuristics...</span></li>
-  </ul>
-</section>
-
-<section style="padding-top:0;">
-  <div class="section-title">Paste-A-Link Analyzer</div>
-  <div class="analyzer-box">
-    <textarea id="url-input" rows="2" placeholder="Paste link from email, Discord, or SMS to inspect locally…"></textarea>
-    <div class="btn-row">
-      <button id="btn-analyze" style="flex:1;">Analyze Link</button>
-      <button class="secondary" id="btn-clear">Clear</button>
-    </div>
-    <div id="analyze-res" style="margin-top:10px;"></div>
+  <div class="student-box" id="student-box">
+    <b>🎓 Student Alert</b>
+    <div id="student-advice"></div>
   </div>
-</section>
+</div>
 
-<footer>
-  All heuristics execute 100% locally in your browser. Zero logs or data uploaded.
-</footer>
+<div class="section-header">
+  <span class="section-title">Threat Signals</span>
+  <span class="section-count" id="sig-count"></span>
+</div>
+<ul class="signals-list" id="sigs">
+  <li class="good"><span class="sig-icon">🔍</span><div class="sig-body"><b>Scanning</b><span>Evaluating page heuristics…</span></div></li>
+</ul>
+
+<div class="analyzer-section">
+  <div class="section-header">
+    <span class="section-title">Instant Link Inspector</span>
+  </div>
+  <div class="input-wrap">
+    <textarea class="url-input" id="url-input" rows="2"
+      placeholder="Paste any URL from email, SMS, or Discord to inspect…"></textarea>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="btn-analyze">Inspect Link</button>
+    <button class="btn ghost" id="btn-clear">✕</button>
+  </div>
+  <div id="analyze-res"></div>
+</div>
+
+<footer>All analysis is 100% local · Zero data uploaded · NETRA v3.0</footer>
 
 <script src="engine.js"></script>
 <script src="popup.js"></script>

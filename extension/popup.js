@@ -1,88 +1,174 @@
 /**
- * PhishLens Student Shield — Popup Interface Logic
- * Renders active tab risk gauge, student protection alert, and URL sandbox analyzer.
+ * NETRA — Network Eye for Threat Recognition & Analysis
+ * Popup Interface Logic v3.0
  */
 
-const COLORS = {
-  dangerous: "#dc2626",
-  suspicious: "#ea580c",
-  caution: "#ca8a04",
-  "likely safe": "#16a34a",
-  unknown: "#64748b"
+const RISK_COLOR = {
+  dangerous:     "#ff3b5c",
+  suspicious:    "#ff7b00",
+  caution:       "#f0a500",
+  "likely safe": "#00e87a",
+  unknown:       "#6b8196"
 };
 
+const RISK_ICON = {
+  dangerous:     "🔴",
+  suspicious:    "🟠",
+  caution:       "🟡",
+  "likely safe": "🟢",
+  unknown:       "⚪"
+};
+
+const SIG_ICON = {
+  high: "⚠️",
+  med:  "🔶",
+  low:  "🔷",
+  good: "✅"
+};
+
+/**
+ * Animate the SVG arc gauge
+ */
+function setGauge(score, color) {
+  const arc = document.getElementById("gauge-arc");
+  if (!arc) return;
+  const circumference = 2 * Math.PI * 28; // r=28 → 175.9
+  const offset = circumference - (score / 100) * circumference;
+  arc.style.strokeDashoffset = offset;
+  arc.style.stroke = color;
+}
+
+/**
+ * Render all result data into the NETRA popup
+ */
 function paintResult(result) {
-  const ring = document.getElementById("ring");
-  const scoreNum = document.getElementById("score-num");
-  const lvl = document.getElementById("lvl");
-  const host = document.getElementById("host");
-  const summary = document.getElementById("summary");
-  const studentBox = document.getElementById("student-box");
+  const scoreEl   = document.getElementById("score-num");
+  const lvlEl     = document.getElementById("lvl");
+  const hostEl    = document.getElementById("host");
+  const summaryEl = document.getElementById("summary");
+  const studentBox    = document.getElementById("student-box");
   const studentAdvice = document.getElementById("student-advice");
-  const sigs = document.getElementById("sigs");
+  const sigsEl    = document.getElementById("sigs");
+  const sigCount  = document.getElementById("sig-count");
+  const card      = document.getElementById("verdict-card");
+
+  // Stop scan animation
+  if (card) card.classList.remove("scanning");
 
   if (!result || !result.ok) {
-    scoreNum.textContent = "–";
-    lvl.textContent = "restricted page";
-    lvl.style.background = "#334155";
-    lvl.style.color = "#94a3b8";
-    ring.style.background = "#1e293b";
-    ring.style.border = "3px solid #475569";
-    host.textContent = result && result.host ? result.host : "Browser internal or local tab";
-    summary.textContent = "Internal browser pages and settings cannot be scanned.";
+    scoreEl.textContent = "—";
+    scoreEl.style.color = "#6b8196";
+    setGauge(0, "#6b8196");
+    lvlEl.textContent = "Restricted";
+    lvlEl.style.background = "rgba(107,129,150,0.15)";
+    lvlEl.style.color = "#6b8196";
+    hostEl.textContent = result && result.host ? result.host : "Internal browser tab";
+    summaryEl.textContent = "Browser internal pages cannot be scanned.";
     studentBox.style.display = "none";
-    sigs.innerHTML = '<li class="good"><b>Protected Tab</b><span>This page runs in an isolated browser context.</span></li>';
+    sigsEl.innerHTML = '<li class="good"><span class="sig-icon">🔒</span><div class="sig-body"><b>Isolated Context</b><span>This page runs in an isolated browser context and is safe.</span></div></li>';
+    if (sigCount) sigCount.textContent = "";
     return;
   }
 
-  const c = COLORS[result.level] || COLORS.unknown;
-  scoreNum.textContent = result.score;
-  ring.style.background = c + "22";
-  ring.style.border = `3px solid ${c}`;
+  const c = RISK_COLOR[result.level] || RISK_COLOR.unknown;
+  scoreEl.textContent = result.score;
+  scoreEl.style.color = c;
+  setGauge(result.score, c);
 
-  lvl.textContent = `${result.level} (${result.score}/100)`;
-  lvl.style.background = c + "33";
-  lvl.style.color = c;
-  lvl.style.border = `1px solid ${c}`;
+  lvlEl.textContent = `${RISK_ICON[result.level] || "⚪"} ${result.level}`.toUpperCase();
+  lvlEl.style.background = c + "22";
+  lvlEl.style.color = c;
+  lvlEl.style.border = `1px solid ${c}44`;
+  lvlEl.style.borderRadius = "4px";
+  lvlEl.style.padding = "3px 9px";
 
-  host.textContent = result.host || result.url || "";
-  summary.textContent = result.summary || "";
+  hostEl.textContent = result.host || result.url || "";
+  summaryEl.textContent = result.summary || "";
 
-  // Student Protection box
+  // Student Protection
   if (result.studentProtection && result.studentProtection.isStudentTargeted) {
     studentBox.style.display = "block";
     const targets = (result.studentProtection.detectedTargets || []).join(", ") || "Campus / University Services";
-    const advice = (result.studentProtection.advice && result.studentProtection.advice[0]) ||
-      "Do not enter university credentials on this website.";
-    studentAdvice.innerHTML = `<div><b>Target:</b> ${targets}</div><div style="margin-top:2px;">${advice}</div>`;
+    const advice  = (result.studentProtection.advice && result.studentProtection.advice[0]) ||
+      "Do not enter university credentials here.";
+    studentAdvice.innerHTML = `<div><b style="font-size:10px;color:#aaa">Target:</b> ${targets}</div><div style="margin-top:3px;">${advice}</div>`;
   } else {
     studentBox.style.display = "none";
   }
 
-  // Detected signals
-  sigs.innerHTML = "";
+  // Signals
   const signals = result.signals || [];
+  if (sigCount) sigCount.textContent = signals.length > 0 ? `${signals.length} found` : "";
+  sigsEl.innerHTML = "";
+
   if (signals.length === 0) {
-    sigs.innerHTML = '<li class="good"><b>Clean</b><span>No suspicious phishing signals detected on this site.</span></li>';
+    sigsEl.innerHTML = '<li class="good"><span class="sig-icon">✅</span><div class="sig-body"><b>No Threats</b><span>No suspicious signals detected on this page.</span></div></li>';
   } else {
-    for (const s of signals.slice(0, 5)) {
+    for (const s of signals.slice(0, 6)) {
       const li = document.createElement("li");
       li.className = s.severity || "med";
-      li.innerHTML = `<b>${s.title}</b><span>${s.detail}</span>`;
-      sigs.appendChild(li);
+      li.innerHTML = `<span class="sig-icon">${SIG_ICON[s.severity] || "🔶"}</span><div class="sig-body"><b>${s.title}</b><span>${s.detail}</span></div>`;
+      sigsEl.appendChild(li);
     }
   }
 }
 
+/**
+ * Render a compact inline result for the URL inspector
+ */
+function renderInspectResult(r, container) {
+  const c = RISK_COLOR[r.level] || RISK_COLOR.unknown;
+  const topSigs = (r.signals || []).slice(0, 4);
+
+  const advice = r.studentProtection && r.studentProtection.isStudentTargeted
+    ? `<div style="margin-top:8px;background:rgba(0,240,200,0.06);border:1px solid rgba(0,240,200,0.18);border-radius:6px;padding:7px 9px;font-size:10.5px;">
+        <b style="color:#00f0c8;display:block;font-size:10px;letter-spacing:.5px;margin-bottom:2px;">🎓 STUDENT ALERT</b>
+        ${r.studentProtection.advice[0] || "Targeted student threat."}
+       </div>` : "";
+
+  container.innerHTML = `
+    <div style="background:#0d1422;border:1px solid ${c}44;border-radius:8px;padding:11px;margin-top:2px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:46px;height:46px;border-radius:50%;background:${c}15;border:3px solid ${c};
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                    font-size:16px;font-weight:900;color:${c};">${r.score}</div>
+        <div>
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+                      background:${c}22;color:${c};border-radius:4px;padding:2px 7px;display:inline-block;">
+            ${RISK_ICON[r.level] || ""} ${r.level}
+          </div>
+          <div style="font-size:10.5px;color:#6b8196;font-family:'JetBrains Mono',monospace;margin-top:3px;word-break:break-all;">${r.host || ""}</div>
+          <div style="font-size:11px;margin-top:2px;">${r.summary || ""}</div>
+        </div>
+      </div>
+      ${advice}
+      <div style="margin-top:6px;">
+        ${topSigs.map(s => `
+          <div style="display:flex;gap:7px;align-items:flex-start;padding:5px 8px;background:#111827;border-radius:5px;
+                      border-left:3px solid ${s.severity==='high'?'#ff3b5c':s.severity==='med'?'#ff7b00':s.severity==='low'?'#f0a500':'#00e87a'};
+                      margin-bottom:4px;font-size:10.5px;">
+            <span>${SIG_ICON[s.severity]||"🔶"}</span>
+            <div><b style="display:block;font-size:10.5px;">${s.title}</b><span style="color:#6b8196">${s.detail}</span></div>
+          </div>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Load the active tab's scan result
+ */
 async function loadTabResult(rescan = false) {
   try {
+    const card = document.getElementById("verdict-card");
+    if (card) card.classList.add("scanning");
+
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.id) {
       paintResult({ ok: false });
       return;
     }
 
-    // Don't attempt to scan chrome://, edge://, devtools://
     if (tab.url && /^(chrome|edge|devtools|about|chrome-extension):/i.test(tab.url)) {
       paintResult({ ok: false, host: tab.url });
       return;
@@ -92,18 +178,13 @@ async function loadTabResult(rescan = false) {
 
     chrome.tabs.sendMessage(tab.id, { type: messageType }, (response) => {
       if (chrome.runtime.lastError || !response) {
-        // Fallback: check background worker's cached analysis
         chrome.runtime.sendMessage({ type: "pl-get-cached-result", tabId: tab.id }, (cachedResp) => {
           if (cachedResp && cachedResp.result) {
             paintResult(cachedResp.result);
+          } else if (window.PhishLens && tab.url) {
+            paintResult(window.PhishLens.analyzeUrl(tab.url));
           } else {
-            // Local fallback analysis from URL
-            if (window.PhishLens && tab.url) {
-              const localRes = window.PhishLens.analyzeUrl(tab.url);
-              paintResult(localRes);
-            } else {
-              paintResult({ ok: false, host: tab.url });
-            }
+            paintResult({ ok: false, host: tab.url });
           }
         });
       } else {
@@ -111,69 +192,42 @@ async function loadTabResult(rescan = false) {
       }
     });
   } catch (err) {
-    console.warn("Popup tab result load error:", err);
+    console.warn("NETRA popup error:", err);
     paintResult({ ok: false });
   }
 }
 
-// Rescan button
+// Rescan
 document.getElementById("btn-rescan").addEventListener("click", () => {
-  document.getElementById("lvl").textContent = "Rescanning…";
+  const lvlEl = document.getElementById("lvl");
+  if (lvlEl) { lvlEl.textContent = "Rescanning…"; }
   loadTabResult(true);
 });
 
-// Paste-A-Link Analyzer
+// Inspect URL
 document.getElementById("btn-analyze").addEventListener("click", () => {
   const inputEl = document.getElementById("url-input");
-  const rawUrl = inputEl.value.trim();
+  const rawUrl  = inputEl.value.trim();
   const resContainer = document.getElementById("analyze-res");
 
   if (!rawUrl) {
-    resContainer.innerHTML = '<div style="color:#94a3b8;font-size:11px;">Please enter or paste a URL first.</div>';
+    resContainer.innerHTML = '<div style="color:#6b8196;font-size:11px;padding:4px 0;">Please paste a URL to inspect.</div>';
     return;
   }
-
   if (!window.PhishLens) {
-    resContainer.innerHTML = '<div style="color:#ef4444;font-size:11px;">Engine error: PhishLens not loaded.</div>';
+    resContainer.innerHTML = '<div style="color:#ff3b5c;font-size:11px;padding:4px 0;">Engine not loaded. Reload the extension.</div>';
     return;
   }
-
-  const r = window.PhishLens.analyzeUrl(rawUrl);
-  const c = COLORS[r.level] || COLORS.unknown;
-
-  const topSigs = (r.signals || []).slice(0, 4);
-
-  resContainer.innerHTML = `
-    <div class="card" style="margin-bottom:0;border-color:${c};">
-      <div class="gauge-row">
-        <div class="ring" style="background:${c}22;border:3px solid ${c};width:50px;height:50px;font-size:16px;">
-          ${r.score}<small>/100</small>
-        </div>
-        <div class="gauge-info">
-          <div><span class="lvl-pill" style="background:${c}33;color:${c};border:1px solid ${c};">${r.level}</span></div>
-          <div class="host-label">${r.host || rawUrl}</div>
-          <div class="summary-label" style="font-size:11px;">${r.summary}</div>
-        </div>
-      </div>
-      ${r.studentProtection && r.studentProtection.isStudentTargeted ? `
-        <div class="student-box" style="margin-top:8px;">
-          <b>🛡️ Student Alert</b>
-          <div>${r.studentProtection.advice[0] || 'Targeted student threat detected.'}</div>
-        </div>` : ''}
-      <ul class="signals-list" style="margin-top:8px;">
-        ${topSigs.map((s) => `<li class="${s.severity}"><b>${s.title}</b><span>${s.detail}</span></li>`).join("")}
-      </ul>
-    </div>
-  `;
+  renderInspectResult(window.PhishLens.analyzeUrl(rawUrl), resContainer);
 });
 
-// Clear button
+// Clear
 document.getElementById("btn-clear").addEventListener("click", () => {
   document.getElementById("url-input").value = "";
   document.getElementById("analyze-res").innerHTML = "";
 });
 
-// Enter key in textarea triggers analyze
+// Enter key
 document.getElementById("url-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -181,5 +235,5 @@ document.getElementById("url-input").addEventListener("keydown", (e) => {
   }
 });
 
-// Initial load
+// Boot
 loadTabResult();

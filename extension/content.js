@@ -1,23 +1,26 @@
 /**
- * PhishLens Student Shield — Content Script & Automatic In-Page Scanner
- * Performs local page analysis, dispatches standardized results to background worker,
- * and renders an isolated Shadow DOM warning banner with student-specific guidance.
+ * NETRA — Network Eye for Threat Recognition & Analysis
+ * Content Script & Automatic In-Page Scanner v3.0
+ * Performs local page analysis, dispatches results to background worker,
+ * and renders an isolated Shadow DOM NETRA warning banner.
  */
 (function () {
   "use strict";
 
-  if (window.__phishlensLoaded) return;
-  window.__phishlensLoaded = true;
+  if (window.__netraLoaded) return;
+  window.__netraLoaded = true;
 
   const LEVEL_COLOR = {
-    dangerous: "#dc2626",      // Crimson Red
-    suspicious: "#ea580c",     // Orange
-    caution: "#ca8a04",        // Amber
-    "likely safe": "#16a34a"   // Emerald Green
+    dangerous:     "#ff3b5c",
+    suspicious:    "#ff7b00",
+    caution:       "#f0a500",
+    "likely safe": "#00e87a"
   };
 
   let lastResult = null;
   let bannerHost = null;
+  let currentBannerScore = null;
+  let currentBannerLevel = null;
 
   /**
    * Safely captures DOM signals without throwing exceptions
@@ -85,7 +88,7 @@
         text: bodyText,
       };
     } catch (err) {
-      console.warn("PhishLens snapshot error caught:", err);
+      console.warn("NETRA snapshot error caught:", err);
       return {
         url: location.href,
         passwordFields: 0,
@@ -104,14 +107,21 @@
    */
   function injectBanner(result) {
     try {
+      if (bannerHost && currentBannerScore === result.score && currentBannerLevel === result.level) {
+        return;
+      }
+
       if (bannerHost) {
         bannerHost.remove();
         bannerHost = null;
       }
 
+      currentBannerScore = result.score;
+      currentBannerLevel = result.level;
+
       const color = LEVEL_COLOR[result.level] || "#dc2626";
       const hostEl = document.createElement("div");
-      hostEl.id = "phishlens-student-shield-banner";
+      hostEl.id = "netra-threat-eye-banner";
       hostEl.style.all = "initial";
 
       const shadow = hostEl.attachShadow({ mode: "open" });
@@ -251,7 +261,7 @@
           <div class="banner-container">
             <div class="header-row">
               <div class="brand-badge">
-                <span>🛡️ Utkarsh Ki Fish</span>
+                <span>👁️ NETRA</span>
                 <span style="font-size:11px;opacity:0.85;">Shield</span>
               </div>
               <span class="score-pill">${result.score}/100</span>
@@ -283,6 +293,8 @@
       shadow.getElementById("pl-close").onclick = () => {
         hostEl.remove();
         bannerHost = null;
+        currentBannerScore = null;
+        currentBannerLevel = null;
         if (document.body) document.body.style.paddingTop = "0px";
       };
 
@@ -318,12 +330,13 @@
       const snap = snapshot();
       lastResult = window.PhishLens.analyze(location.href, snap);
 
-      // Send result to background service worker (for badge and desktop notifications)
+      // Send result + page text to background service worker (for badge, notifications, Gemini AI)
       try {
         if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
           chrome.runtime.sendMessage({
             type: "pl-score",
-            result: lastResult
+            result: lastResult,
+            pageText: snap.text ? snap.text.slice(0, 1200) : ""
           }, () => {
             if (chrome.runtime.lastError) {
               // Extension context might be disconnected during reloading; safe to ignore
@@ -340,6 +353,8 @@
       } else if (bannerHost && lastResult.score < 40) {
         bannerHost.remove();
         bannerHost = null;
+        currentBannerScore = null;
+        currentBannerLevel = null;
         if (document.body) document.body.style.paddingTop = "0px";
       }
     } catch (err) {
@@ -353,11 +368,24 @@
   // Watch for dynamic DOM changes (SPAs, dynamic login modals) with debouncing
   let debounceTimer = null;
   try {
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((mutations) => {
+      // Ignore mutations originating strictly within our own banner element
+      let onlyBannerMutations = true;
+      for (let i = 0; i < mutations.length; i++) {
+        const t = mutations[i].target;
+        if (!t) continue;
+        if (t.id === "netra-threat-eye-banner" || (t.closest && t.closest("#netra-threat-eye-banner"))) {
+          continue;
+        }
+        onlyBannerMutations = false;
+        break;
+      }
+      if (onlyBannerMutations) return;
+
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         run();
-      }, 1200);
+      }, 350);
     });
 
     if (document.documentElement) {
@@ -380,6 +408,13 @@
         } else if (msg.type === "pl-rescan") {
           run();
           sendResponse(lastResult);
+        } else if (msg.type === "pl-gemini-update") {
+          // Background pushed an AI-enriched result — update local state and banner
+          lastResult = msg.result;
+          if (lastResult && lastResult.score >= 40) {
+            injectBanner(lastResult);
+          }
+          sendResponse({ ok: true });
         }
       } catch (e) {
         sendResponse(null);

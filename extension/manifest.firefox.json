@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Utkarsh Ki Fish — Real-Time Phishing Protection",
-  "version": "2.0.0",
-  "description": "Utkarsh Ki Fish: Real-time client-side phishing protection for students: detects university portal spoofing, fake .EDU domains, credential harvesting, and tuition scams with zero data collection.",
+  "name": "NETRA — Real-Time Phishing Detection",
+  "version": "3.0.0",
+  "description": "NETRA: Network Eye for Threat Recognition & Analysis. Real-time, 100% local phishing detection. Detects university portal spoofing, fake .EDU domains, credential harvesting and financial scams. Zero data collection.",
   "permissions": [
     "tabs",
     "activeTab",
@@ -32,7 +32,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Utkarsh Ki Fish",
+    "default_title": "NETRA — Threat Eye",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
