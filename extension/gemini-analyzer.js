@@ -17,7 +17,7 @@ function getApiKey() {
   }
 }
 
-const GEMINI_MODEL = "gemini-2.0-flash-lite"; // Fast, cost-efficient
+const GEMINI_MODEL = "gemini-2.5-flash"; // Validated and active for this API key
 function getGeminiUrl() {
   return `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${getApiKey()}`;
 }
@@ -97,8 +97,11 @@ async function callGemini(url, localScore, localSignals, pageTextSnippet) {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.1,      // Low temp for deterministic structured output
-          maxOutputTokens: 256,
-          topP: 0.8
+          maxOutputTokens: 512,
+          topP: 0.8,
+          thinkingConfig: {
+            thinkingBudget: 0    // Direct JSON output without thinking token exhaustion
+          }
         },
         safetySettings: [
           { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
@@ -113,7 +116,9 @@ async function callGemini(url, localScore, localSignals, pageTextSnippet) {
     }
 
     const data = await resp.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const candidate = data?.candidates?.[0];
+    const textPart = candidate?.content?.parts?.find(p => p.text) || candidate?.content?.parts?.[0];
+    const rawText = textPart?.text || "";
 
     // Parse JSON from model response (strip any accidental markdown fences)
     const cleaned = rawText
