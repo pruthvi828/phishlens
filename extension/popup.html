@@ -1,51 +1,223 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhishLens Student Shield</title>
 <style>
-  body{width:340px;margin:0;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:#0f172a;color:#e2e8f0}
-  header{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e293b}
-  header img{width:26px;height:26px}
-  h1{font-size:15px;margin:0;font-weight:700}
-  .sub{color:#94a3b8;font-size:11px}
-  section{padding:12px 16px}
-  .gauge{display:flex;align-items:center;gap:12px}
-  .ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:18px;flex-shrink:0}
-  .lvl{font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.5px}
-  .host{color:#94a3b8;font-size:11px;word-break:break-all;margin-top:2px}
-  ul{list-style:none;margin:10px 0 0;padding:0}
-  li{padding:7px 9px;border-left:3px solid #475569;background:#1e293b;border-radius:4px;margin-bottom:6px}
-  li b{display:block;font-size:12px}
-  li span{color:#94a3b8;font-size:11px}
-  li.high{border-color:#dc2626} li.med{border-color:#ea580c} li.low{border-color:#ca8a04} li.good{border-color:#16a34a}
-  textarea{width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#e2e8f0;
-    border-radius:6px;padding:8px;font:12px monospace;resize:vertical}
-  button{margin-top:8px;width:100%;background:#14b8a6;border:0;color:#042f2e;font-weight:700;
-    padding:8px;border-radius:6px;cursor:pointer;font-size:13px}
-  button:hover{background:#2dd4bf}
-  .res{margin-top:10px}
-  .muted{color:#64748b;font-size:11px;text-align:center;padding:0 16px 10px}
+  :root {
+    --bg-main: #0b1120;
+    --bg-card: #1e293b;
+    --bg-card-subtle: #172033;
+    --border-color: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-blue: #38bdf8;
+    --danger: #dc2626;
+    --suspicious: #ea580c;
+    --caution: #ca8a04;
+    --safe: #16a34a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 360px;
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+  }
+  header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border-color);
+  }
+  header img { width: 28px; height: 28px; border-radius: 6px; }
+  .header-titles h1 { font-size: 15px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 6px; }
+  .header-titles .badge { font-size: 10px; background: #0284c7; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+  .header-titles .sub { color: var(--text-secondary); font-size: 11px; }
+
+  section { padding: 14px 16px; }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  .ring small { font-size: 9px; opacity: 0.8; font-weight: 600; text-transform: uppercase; }
+  .gauge-info { flex: 1; overflow: hidden; }
+  .lvl-pill {
+    display: inline-block;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .host-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    word-break: break-all;
+    margin-top: 4px;
+  }
+  .summary-label {
+    font-size: 12px;
+    margin-top: 6px;
+    font-weight: 500;
+    color: #e2e8f0;
+  }
+
+  .student-box {
+    background: #0f172a;
+    border-left: 3px solid var(--accent-blue);
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .student-box b { color: #7dd3fc; display: block; margin-bottom: 2px; }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  ul.signals-list { list-style: none; }
+  ul.signals-list li {
+    padding: 7px 10px;
+    border-left: 3px solid #64748b;
+    background: #172033;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+  ul.signals-list li b { display: block; font-size: 11px; margin-bottom: 2px; }
+  ul.signals-list li span { color: var(--text-secondary); line-height: 1.35; display: block; }
+  ul.signals-list li.high { border-color: var(--danger); }
+  ul.signals-list li.med { border-color: var(--suspicious); }
+  ul.signals-list li.low { border-color: var(--caution); }
+  ul.signals-list li.good { border-color: var(--safe); }
+
+  .analyzer-box {
+    margin-top: 8px;
+  }
+  textarea {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 8px;
+    font: 11px monospace;
+    resize: none;
+  }
+  textarea:focus { outline: none; border-color: var(--accent-blue); }
+  .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+  button {
+    background: #0284c7;
+    border: 0;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s ease;
+  }
+  button:hover { background: #0369a1; }
+  button.secondary { background: #334155; }
+  button.secondary:hover { background: #475569; }
+
+  footer {
+    text-align: center;
+    font-size: 10px;
+    color: #64748b;
+    padding: 0 16px 12px;
+  }
 </style>
 </head>
 <body>
 <header>
-  <img src="icons/icon48.png" alt="">
-  <div><h1>PhishLens</h1><div class="sub">local, explainable phishing detection</div></div>
-</header>
-<section>
-  <div class="gauge">
-    <div class="ring" id="ring">–</div>
-    <div><div class="lvl" id="lvl">scanning…</div><div class="host" id="host"></div></div>
+  <img src="icons/icon48.png" alt="PhishLens">
+  <div class="header-titles">
+    <h1>PhishLens <span class="badge">Student Shield</span></h1>
+    <div class="sub">Local, zero-network phishing protection</div>
   </div>
-  <ul id="sigs"></ul>
-</section>
+</header>
+
 <section>
-  <textarea id="url" rows="2" placeholder="Paste a suspicious link to analyze it locally…"></textarea>
-  <button id="go">Analyze link</button>
-  <div class="res" id="res"></div>
+  <div class="card">
+    <div class="section-title">
+      <span>Active Tab Verdict</span>
+      <button class="secondary" id="btn-rescan" style="padding:2px 8px;font-size:10px;">Rescan</button>
+    </div>
+    <div class="gauge-row">
+      <div class="ring" id="ring">
+        <span id="score-num">–</span>
+        <small>/100</small>
+      </div>
+      <div class="gauge-info">
+        <div><span class="lvl-pill" id="lvl">Scanning…</span></div>
+        <div class="host-label" id="host">Waiting for page analysis…</div>
+        <div class="summary-label" id="summary"></div>
+      </div>
+    </div>
+    <div class="student-box" id="student-box" style="display:none;">
+      <b>🛡️ Student Protection Alert</b>
+      <div id="student-advice"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Detected Signals</div>
+  <ul class="signals-list" id="sigs">
+    <li class="good"><b>Scanning</b><span>Evaluating tab heuristics...</span></li>
+  </ul>
 </section>
-<div class="muted">All analysis runs in your browser. Nothing is uploaded.</div>
+
+<section style="padding-top:0;">
+  <div class="section-title">Paste-A-Link Analyzer</div>
+  <div class="analyzer-box">
+    <textarea id="url-input" rows="2" placeholder="Paste link from email, Discord, or SMS to inspect locally…"></textarea>
+    <div class="btn-row">
+      <button id="btn-analyze" style="flex:1;">Analyze Link</button>
+      <button class="secondary" id="btn-clear">Clear</button>
+    </div>
+    <div id="analyze-res" style="margin-top:10px;"></div>
+  </div>
+</section>
+
+<footer>
+  All heuristics execute 100% locally in your browser. Zero logs or data uploaded.
+</footer>
+
 <script src="engine.js"></script>
 <script src="popup.js"></script>
 </body>

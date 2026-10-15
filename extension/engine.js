@@ -1,13 +1,16 @@
 /*
- * PhishLens engine — client-side phishing risk analysis.
+ * PhishLens Student Shield — client-side phishing risk analysis engine.
  * Pure JavaScript, zero dependencies, zero network calls.
  * Runs identically inside the browser extension (content script / popup)
  * and the web demo page. Also loadable in Node for testing.
  *
  * Every check returns an explainable signal — education is part of the product.
+ * Preserves original MIT license and adds Student Shield detection heuristics.
  */
 (function (global) {
   "use strict";
+
+  const ENGINE_VERSION = "2.0.0-student-shield";
 
   // ---- reference data -------------------------------------------------------
 
@@ -54,7 +57,7 @@
     wise: ["wise.com", "transferwise.com"],
     citibank: ["citibank.com", "citi.com"],
     capitalone: ["capitalone.com"],
-    americanexpress: ["americanexpress.com", "aexp.com"],
+    americanexpress: ["americanexpress.com", "aexp.com", "amex.com"],
     venmo: ["venmo.com"],
     cashapp: ["cash.app"],
     telegram: ["telegram.org", "t.me"],
@@ -63,138 +66,72 @@
     openai: ["openai.com", "chatgpt.com"],
     github: ["github.com"],
     etsy: ["etsy.com"],
-    telstra: ["telstra.com", "telstra.com.au"],
-    shopee: ["shopee.com", "shopee.sg", "shopee.com.my", "shopee.co.id", "shopee.vn"],
-    kucoin: ["kucoin.com"],
-    comcast: ["comcast.com", "xfinity.com"],
-    att: ["att.com"],
-    verizon: ["verizon.com"],
-    spectrum: ["spectrum.net", "spectrum.com"],
-    coinsquare: ["coinsquare.com"],
-    bitget: ["bitget.com"],
-    okx: ["okx.com"],
-    bybit: ["bybit.com"],
-    exodus: ["exodus.com", "exodus.io"],
-    walmart: ["walmart.com"],
-    costco: ["costco.com"],
-    target: ["target.com"],
-    homedepot: ["homedepot.com"],
-    lowes: ["lowes.com"],
-    allegro: ["allegro.pl", "allegro.com"],
-    amex: ["americanexpress.com", "aexp.com", "amex.com"],
-    icloud: ["icloud.com"],
-    visa: ["visa.com"],
-    mastercard: ["mastercard.com"],
-    bradesco: ["bradesco.com.br"],
-    itau: ["itau.com.br"],
-    santander: ["santander.com", "santander.com.br", "santander.co.uk"],
-    natwest: ["natwest.com"],
-    deutsche: ["deutsche-bank.de", "db.com"],
-    commerzbank: ["commerzbank.de"],
-    smbc: ["smbc.co.jp"],
-    mufg: ["mufg.jp"],
-    mizuho: ["mizuho.co.jp"],
-    jcb: ["jcb.co.jp"],
-    docusign: ["docusign.com"],
-    bt: ["bt.com"],
-    optus: ["optus.com.au"],
-    vodafone: ["vodafone.com"],
-    orange: ["orange.fr", "orange.com"],
-    sfr: ["sfr.fr"],
-    bouygues: ["bouyguestelecom.fr"],
-    laposte: ["laposte.fr", "laposte.net"],
-    cdiscount: ["cdiscount.com"],
-    fnac: ["fnac.com"],
-    carrefour: ["carrefour.fr", "carrefour.com"],
-    auchan: ["auchan.fr"],
-    bnp: ["bnpparibas.com", "bnpparibas.net"],
-    creditagricole: ["credit-agricole.fr", "ca-cb.com"],
-    societegenerale: ["societegenerale.fr", "socgen.com"],
-    labanquepostale: ["labanquepostale.fr"],
-    ameli: ["ameli.fr", "assurance-maladie.fr"],
-    impots: ["impots.gouv.fr"],
-    sncf: ["sncf.com", "sncf-connect.com"],
-    chronopost: ["chronopost.fr"],
-    colissimo: ["colissimo.fr"],
-    mondialrelay: ["mondialrelay.fr"],
-    rakuten: ["rakuten.com", "rakuten.co.jp"],
-    ups: ["ups.com"],
-    dpd: ["dpd.com", "dpdgroup.com"],
-    gls: ["gls-group.com"],
-    hermes: ["hermesworld.com", "evri.com"],
-    correos: ["correos.es"],
-    anpost: ["anpost.com"],
-    posteitaliane: ["poste.it"],
-    intesasanpaolo: ["intesasanpaolo.com"],
-    unicredit: ["unicredit.it"],
-    lloyds: ["lloydsbank.com", "lloyds.com"],
-    barclays: ["barclays.co.uk", "barclays.com"],
-    hsbc: ["hsbc.com", "hsbc.co.uk"],
-    tsb: ["tsb.co.uk"],
-    halifax: ["halifax.co.uk"],
-    nationwide: ["nationwide.co.uk"],
-    monzo: ["monzo.com"],
-    starling: ["starlingbank.com"],
-    xfinity: ["xfinity.com", "comcast.com"],
-    mediamarkt: ["mediamarkt.com", "mediamarkt.de"],
-    inpost: ["inpost.pl"],
-    vinted: ["vinted.com", "vinted.fr"],
-    leboncoin: ["leboncoin.fr"],
-    booking: ["booking.com"],
-    airbnb: ["airbnb.com"],
-    uber: ["uber.com"],
-    doordash: ["doordash.com"],
-    revolut: ["revolut.com"],
-    n26: ["n26.com"],
-    caixa: ["caixa.es", "caixabank.com", "lacaixa.es"],
-    bbva: ["bbva.com", "bbva.es"],
-    openbank: ["openbank.es"],
-    evobanco: ["evobanco.com"],
-    centurylink: ["centurylink.com", "centurylink.net"],
-    frontier: ["frontier.com"],
-    cox: ["cox.com"],
-    rcn: ["rcn.com"],
-    mediacom: ["mediacomcable.com"],
-    windstream: ["windstream.net"],
-    fb: ["fb.com", "fbcdn.net"],
+    // Student & Educational Platforms
+    canvas: ["instructure.com"],
+    blackboard: ["blackboard.com"],
+    moodle: ["moodle.org", "moodle.com"],
+    brightspace: ["d2l.com", "brightspace.com"],
+    coursera: ["coursera.org"],
+    edx: ["edx.org"],
+    studentaid: ["studentaid.gov", "ed.gov"],
+    harvard: ["harvard.edu"],
+    mit: ["mit.edu"],
+    stanford: ["stanford.edu"],
+    berkeley: ["berkeley.edu"],
+    oxford: ["ox.ac.uk"],
+    cambridge: ["cam.ac.uk"],
+    columbia: ["columbia.edu"],
+    nyu: ["nyu.edu"],
+    ucla: ["ucla.edu"]
   };
 
+  // Common university / higher-ed keywords
+  const UNIVERSITY_KEYWORDS = [
+    "harvard", "mit", "stanford", "berkeley", "oxford", "cambridge",
+    "columbia", "nyu", "ucla", "cornell", "princeton", "yale",
+    "campus", "university", "college", "faculty", "student", "alumni",
+    "registrar", "bursar", "blackboard", "canvas", "brightspace"
+  ];
+
+  // Student-specific financial / scholarship lures
+  const STUDENT_AID_KEYWORDS = [
+    "fafsa", "student-loan", "loan-forgiveness", "tuition-refund",
+    "student-bursary", "campus-grant", "emergency-aid", "pell-grant",
+    "scholarship-award", "financialaid", "tuition-assistance"
+  ];
+
   // Does a normalized host label (hyphens stripped) contain the brand?
-  // Short brands need prefix match ('otherwise'→wise, 'first'→irs are FPs).
   function labelHasBrand(norm, b) {
     if (norm === b) return true;
     if (norm === b + "s") return false; // dictionary plural (apples.com)
     if (b.length <= 4) {
       if (norm.startsWith(b)) return true;
-      // brand at end only when the lead is credential bait: loginwise ✓, otherwise ✗
       return norm.endsWith(b) && PATH_KEYWORDS.includes(norm.slice(0, -b.length));
     }
     if (norm.length >= b.length + 2 && norm.includes(b)) return true;
-    // leetspeak folded inside a label: m1cr0soft-login, paypa1x
     const dn = deobfuscate(norm);
     if (dn !== norm && dn.length >= b.length + 2 && dn.includes(b)) return true;
-    // doubled-letter scrambling: meetamassklogaiin → metamasklogin
     const sq = (s) => s.replace(/(.)\1+/g, "$1");
     const sb = sq(b);
     return sq(norm).length >= sb.length + 2 && sq(norm).includes(sb);
   }
 
-  // Free/disposable and frequently-abused TLDs (Freenom + low-cost stats).
+  // Free/disposable and frequently-abused TLDs.
   const SUS_TLDS = new Set([
     "tk", "ml", "ga", "cf", "gq", "top", "buzz", "cam", "rest", "quest",
     "monster", "icu", "click", "country", "stream", "download", "loan",
     "racing", "win", "bid", "date", "review", "party", "gdn", "men",
     "work", "zip", "mov", "cfd", "info", "help", "live", "site", "online",
     "store", "shop", "app", "sbs", "mom", "lol", "pics", "skin", "deals",
-    "agency", "bar", "quest", "cc", "cyou", "link", "casa",
+    "agency", "bar", "cc", "cyou", "link", "casa"
   ]);
 
   const SHORTENERS = new Set([
     "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly",
     "rebrand.ly", "cutt.ly", "shorturl.at", "tiny.cc", "rb.gy", "t.ly",
-    "s.id", "bit.do", "soo.gd", "clck.ru", "v.gd",
-    "goo.su", "qrco.de", "s4w.in", "g5.lu", "hotm.io", "ln.run", "short.io",
-    "gt.tc", "fr.gd", "ur.ly", "zi.ht",
+    "s.id", "bit.do", "soo.gd", "clck.ru", "v.gd", "goo.su", "qrco.de",
+    "s4w.in", "g5.lu", "hotm.io", "ln.run", "short.io", "gt.tc", "fr.gd",
+    "ur.ly", "zi.ht"
   ]);
 
   // Credential-theft vocabulary in URL paths.
@@ -202,8 +139,9 @@
     "login", "signin", "sign-in", "verify", "verification", "secure",
     "account", "update", "billing", "confirm", "suspend", "unlock",
     "wallet", "recover", "password", "credential", "authenticate",
-    "webscr", "oauth", "validate", "reauth", "websc",
-    "wp-admin", "wp-content", "wp-includes", "components/com_", "myaccount",
+    "webscr", "oauth", "validate", "reauth", "websc", "wp-admin",
+    "wp-content", "wp-includes", "components/com_", "myaccount",
+    "student-login", "campus-sso", "portal-auth", "student-verify"
   ];
 
   // Scare/urgency phrases scanned in visible page text.
@@ -215,10 +153,19 @@
     "will be suspended", "legal action", "avoid suspension", "restricted",
     "unauthorized", "locked your account", "verify now", "update your payment",
     "payment declined", "claim your prize", "you have won", "congratulations",
-    "wire transfer", "gift card", "bitcoin", "crypto", "refund",
+    "wire transfer", "gift card", "bitcoin", "crypto", "refund"
   ];
 
-  // Keyboard-order / random-looking SLDs score high on this cheap entropy test.
+  // Student-specific panic phrases
+  const STUDENT_URGENCY_PHRASES = [
+    "student account deactivation", "student account suspended",
+    "student email will be terminated", "campus portal access suspended",
+    "library access will be terminated", "confirm your student status immediately",
+    "tuition overdue account termination", "office 365 student license expiration",
+    "duo mfa verification required", "student bursary claim pending",
+    "urgent student aid disbursement", "academic hold placed on account"
+  ];
+
   const COMMON_SLD_WORDS = /^(mail|email|shop|store|news|blog|app|web|site|online|cloud|data|tech|media|group|inc|corp|home|my|the|get|go)/;
 
   // Confusable character map: visually-similar chars folded to ASCII.
@@ -227,10 +174,10 @@
     "8": "b", "9": "g", "@": "a", "$": "s", "!": "i", "|": "l",
     "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "х": "x", "і": "i",
     "ј": "j", "ѕ": "s", "һ": "h", "ո": "n", "օ": "o", "α": "a", "ο": "o",
-    "ρ": "p", "τ": "t", "υ": "u", "ν": "v", "κ": "k", "μ": "m", "χ": "x",
+    "ρ": "p", "τ": "t", "υ": "u", "ν": "v", "κ": "k", "μ": "m", "χ": "x"
   };
   const MULTI_CONFUSABLES = [
-    [/rn/g, "m"], [/vv/g, "w"], [/cl/g, "d"], [/nn/g, "n"],
+    [/rn/g, "m"], [/vv/g, "w"], [/cl/g, "d"], [/nn/g, "n"]
   ];
 
   const IP_HOST = /^(\d{1,3}\.){3}\d{1,3}$|^\[?[0-9a-f:]+\]?$/i;
@@ -266,7 +213,6 @@
     );
   }
 
-  // Fold confusables to a canonical ASCII-ish form for brand comparison.
   function deobfuscate(sld) {
     let out = "";
     for (const ch of sld.toLowerCase()) out += CONFUSABLES[ch] || ch;
@@ -279,49 +225,37 @@
 
   const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
-  // Bait words that are suspicious inside a hostname (not just the path).
   const DOMAIN_BAIT = ["login", "signin", "signon", "verify", "account",
     "secure", "support", "billing", "confirm", "auth", "wallet", "webscr",
     "password", "credential", "update", "recovery", "unlock", "suspend",
     "secur", "client", "compte", "banque", "colis", "livraison", "suivi",
-    "facture", "impot", "remboursement", "expir", "oferta",
-    "oferte", "verific", "atendimento", "acesso", "empresa",
-    "payee", "transfer", "cancel", "sms", "gift", "limitedtime", "myaccount",
-    "signatur", "dokumen", "invoice", "refund", "payout",
-    "registro", "cita", "formulario", "cliente", "cuenta", "seguridad",
+    "facture", "impot", "remboursement", "expir", "oferta", "oferte",
+    "verific", "atendimento", "acesso", "empresa", "payee", "transfer",
+    "cancel", "sms", "gift", "limitedtime", "myaccount", "invoice", "refund",
+    "payout", "registro", "cita", "formulario", "cliente", "cuenta", "seguridad",
     "verificar", "pedido", "envio", "rastreo", "premio", "commande",
-    "retract", "activacion", "suscripcion", "servicio"];
+    "studentlogin", "campusauth", "portal-sso"];
 
-  // Free hosting / PaaS domains heavily abused by phishing kits.
   const FREE_HOSTS = ["github.io", "blogspot.com", "weebly.com", "amplifyapp.com",
     "workers.dev", "pages.dev", "web.app", "firebaseapp.com", "netlify.app",
     "vercel.app", "herokuapp.com", "wordpress.com", "wixsite.com", "glitch.me",
     "replit.app", "repl.co", "surge.sh", "fly.dev", "onrender.com", "trycloudflare.com",
     "ngrok.io", "ngrok-free.app", "000webhostapp.com", "sites.google.com",
-    "godaddysites.com", "tripod.com", "angelfire.com", "blogspot.ae", "blogspot.in",
-    "blogspot.co.uk", "blogspot.de", "blogspot.fr", "blogspot.com.br",
-    "webflow.io", "framer.website", "gitbook.io", "wix.com", "site123.me",
-    "carrd.co", "zyrosite.com", "ucraft.site", "mystrikingly.com", "jimdosite.com",
-    "yolasite.com", "weeblysite.com", "bravesites.com", "webnode.page",
-    "canva.site", "notion.site", "linktr.ee", "beacons.ai", "bio.site",
-    "googleapis.com", "appspot.com", "cloudfront.net", "amazonaws.com",
-    "azurewebsites.net", "windows.net", "r2.dev", "fleek.co",
-    "cloudflare-ipfs.com", "ipfs.io", "dweb.link", "w3s.link", "arweave.net",
-    "plesk.page", "4everland.io", "spheron.app", "surge.sh", "edgecompute.app",
-    "replit.dev", "linodeobjects.com", "digitaloceanspaces.com", "backblazeb2.com",
-    "wasabisys.com", "vultrcloud.com", "crazydomains.com", "pages.net.br",
-    "strikingly.com", "ucraft.com", "site123.com", "web.com", "homestead.com",
-    "webs.com", "yolasite.com", "bravenet.com", "freehostia.com", "byethost.com",
-    "eu.org", "pp.ua", "ddns.net", "duckdns.org", "no-ip.com", "no-ip.org",
-    "servehttp.com", "serveftp.com", "servegame.com", "hopto.org", "zapto.org"];
+    "godaddysites.com", "webflow.io", "framer.website", "gitbook.io", "wix.com",
+    "site123.me", "carrd.co", "canva.site", "notion.site", "linktr.ee"];
 
-  // Best-effort registrable domain (SLD + public suffix, no PSL dependency).
+  function isGenuineEduDomain(host) {
+    if (!host) return false;
+    const h = host.toLowerCase();
+    return h.endsWith(".edu") || h.endsWith(".edu.au") || h.endsWith(".edu.sg") ||
+           h.endsWith(".edu.my") || h.endsWith(".edu.cn") || h.endsWith(".edu.in") ||
+           h.endsWith(".ac.uk") || h.endsWith(".edu.br");
+  }
+
   function registrable(host) {
     const parts = host.split(".");
     if (parts.length < 2) return host;
-    const last = parts[parts.length - 1];
     const second = parts[parts.length - 2];
-    // crude two-level suffix handling (co.uk, com.au, ...)
     if (second.length <= 3 && ["co", "com", "net", "org", "gov", "ac", "edu"].includes(second)) {
       return parts.slice(-3).join(".");
     }
@@ -344,373 +278,395 @@
     );
   }
 
-  function signal(id, weight, severity, title, detail) {
-    return { id, weight, severity, title, detail };
+  function signal(id, weight, severity, title, detail, category = "security") {
+    return { id, weight, severity, category, title, detail };
   }
 
   // ---- URL analysis -----------------------------------------------------------
 
   function analyzeUrl(raw) {
-    const signals = [];
-    let url;
-    const input = String(raw || "").trim();
-    if (!input) {
-      return { ok: false, error: "empty input", score: 0, level: "unknown", signals };
-    }
     try {
-      // has explicit scheme (incl. non-HTTP like data:/javascript:) → parse as-is
-      url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(input) ? input : "http://" + input);
-    } catch (e) {
-      return { ok: false, error: "unparseable URL", score: 0, level: "unknown", signals, input };
-    }
-
-    // Non-HTTP(S) schemes are checked before host parsing.
-    if (url.protocol === "data:") {
-      signals.push(signal("data-uri", 55, "high", "data: URI link",
-        "data: URLs smuggle a whole payload inside the link itself — a known phishing channel that bypasses domain checks."));
-      return finalize(signals, input, url);
-    }
-    if (["javascript:", "vbscript:", "file:", "about:", "blob:"].includes(url.protocol)) {
-      signals.push(signal("danger-scheme", 55, "high", `Dangerous scheme "${url.protocol}"`,
-        "This link executes content directly — never part of a legitimate login flow."));
-      return finalize(signals, input, url);
-    }
-
-    const host = url.hostname.toLowerCase();
-    const path = (url.pathname + url.search).toLowerCase();
-    const sld = sldOf(host);
-    const tld = tldOf(host);
-    const reg = registrable(host);
-    const subCount = host.split(".").length - reg.split(".").length;
-    // subdomain labels + free-host detection (used by several checks below)
-    const subs = host === reg ? [] :
-      host.slice(0, host.length - reg.length - 1).split(".").filter(Boolean);
-    const freeHost = FREE_HOSTS.find((f) => host === f || host.endsWith("." + f)) ||
-      (/^blogspot\.[a-z]{2,}(\.[a-z]{2})?$/.test(reg) ? reg : null);
-    // labels eligible for brand matching: on free hosts the SLD is the platform,
-    // not an impersonation target (myname.github.io must not flag 'github').
-    const brandLabels = (freeHost ? [] : [sld]).concat(subs).map((l) => l.replace(/-/g, ""));
-
-    // Transport & scheme
-    if (url.protocol === "http:") {
-      signals.push(signal("http", 12, "med", "No encryption (HTTP)",
-        "Credentials sent over HTTP are transmitted in plaintext."));
-    } else if (!/^https?:$/.test(url.protocol)) {
-      signals.push(signal("scheme", 15, "med", `Unusual scheme "${url.protocol}"`,
-        "Non-HTTP(S) schemes in links are rare in legitimate messages."));
-    }
-    if (url.protocol === "https:") {
-      signals.push(signal("https", -5, "good", "Encrypted connection (HTTPS)",
-        "HTTPS is baseline hygiene — but does not by itself prove legitimacy."));
-    }
-
-    // Host shape
-    if (IP_HOST.test(host)) {
-      signals.push(signal("ip-host", 35, "high", "Raw IP address as hostname",
-        "Legitimate services almost never ask you to log in on a bare IP."));
-    }
-    if (url.username || url.password) {
-      signals.push(signal("at-sign", 50, "high", "Credentials embedded in URL",
-        `The 'user@host' trick hides the real destination — everything before '@' is ignored; the true host is '${host}'.`));
-    }
-    if (host.includes("xn--") || url.href.includes("xn--")) {
-      signals.push(signal("punycode", 40, "high", "Punycode/IDN hostname",
-        "Internationalized domains can render lookalike characters (e.g. 'аррӏе.com')."));
-    }
-    if (SUS_TLDS.has(tld)) {
-      signals.push(signal("tld", 18, "med", `High-abuse TLD ".${tld}"`,
-        "This TLD is cheap/free and statistically over-represented in phishing."));
-    }
-    if (SHORTENERS.has(reg)) {
-      signals.push(signal("shortener", 15, "med", "URL shortener",
-        "Short links hide the true destination — expand before trusting."));
-    }
-    if (subCount >= 3) {
-      signals.push(signal("subdomains", 15, "med", `${subCount} nested subdomains`,
-        "Long chains like 'paypal.com.secure.login.evil.com' bury the real domain."));
-    } else if (subCount === 2) {
-      signals.push(signal("subdomains", 6, "low", "Multiple subdomains",
-        "Slightly unusual nesting — check the registrable domain carefully."));
-    }
-    const hyphens = (sld.match(/-/g) || []).length;
-    if (hyphens >= 2) {
-      signals.push(signal("hyphens", 10, "low", `${hyphens} hyphens in domain`,
-        "Stuffing like 'secure-login-verify' is a classic phishing tell."));
-    }
-    if (input.length > 100) {
-      signals.push(signal("length", 8, "low", `Very long URL (${input.length} chars)`,
-        "Overlong URLs are often used to push the real domain out of view."));
-    }
-    if (/^\d+$/.test(sld) && sld.length >= 6) {
-      signals.push(signal("numeric-domain", 25, "med", `All-numeric domain "${sld}"`,
-        "Random number domains are throwaway phishing infrastructure."));
-    } else if ((host.match(/\d/g) || []).length >= 4 && !IP_HOST.test(host)) {
-      signals.push(signal("digits", 8, "low", "Many digits in hostname",
-        "Random-looking digit strings are common in disposable phishing domains."));
-    }
-
-    // Brand impersonation
-    if (!isBrandDomain(host)) {
-      const deob = deobfuscate(sld);
-      for (const [brand] of Object.entries(BRANDS)) {
-        if (brand.length <= 3) continue; // 2-3 char brands are FP machines (bit→bt)
-        if (deob === brand + "s") continue; // dictionary plural (apples.com)
-        if (deob.length < brand.length && brand.includes(deob)) continue; // fragment, not squat (bit.ly⊂bybit)
-        const dist = levenshtein(deob, brand);
-        // dist 2 only pays off on long brands ('cafe'→'chase', 'etsy'→'ebay' are legit)
-        if (deob !== brand && dist > 0 && dist <= (brand.length <= 6 ? 1 : 2)) {
-          signals.push(signal("typosquat", 45, "high",
-            `Lookalike of "${brand}" (edit distance ${dist})`,
-            `'${host}' differs subtly from the real ${BRANDS[brand][0]} — a typosquat.`));
-          break;
-        }
-        if (dist === 0 && deob !== sld) {
-          signals.push(signal("homoglyph", 45, "high",
-            `Homoglyph impersonation of "${brand}"`,
-            `'${sld}' uses lookalike characters to spell '${brand}'.`));
-          break;
-        }
+      const signals = [];
+      let url;
+      const input = String(raw || "").trim();
+      if (!input) {
+        return createFallback(input, "empty input");
       }
-      // brand name embedded in hostname while real domain is something else
-      for (const [brand, domains] of Object.entries(BRANDS)) {
-        const owned = domains.some((d) => host === d || host.endsWith("." + d));
-        if (!owned && brandLabels.some((l) => labelHasBrand(l, brand))) {
-          signals.push(signal("brand-in-host", 35, "high",
-            `"${brand}" appears in hostname but domain is '${reg}'`,
-            "Attackers prepend brand names as subdomains to look legitimate."));
-          break;
+      try {
+        url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(input) ? input : "http://" + input);
+      } catch (e) {
+        return createFallback(input, "unparseable URL");
+      }
+
+      // Non-HTTP(S) schemes
+      if (url.protocol === "data:") {
+        signals.push(signal("data-uri", 55, "high", "data: URI link",
+          "data: URLs smuggle a whole payload inside the link itself — a known phishing channel."));
+        return finalize(signals, input, url);
+      }
+      if (["javascript:", "vbscript:", "file:", "about:", "blob:"].includes(url.protocol)) {
+        signals.push(signal("danger-scheme", 55, "high", `Dangerous scheme "${url.protocol}"`,
+          "This link executes content directly — never part of a legitimate login flow."));
+        return finalize(signals, input, url);
+      }
+
+      const host = url.hostname.toLowerCase();
+      const path = (url.pathname + url.search).toLowerCase();
+      const sld = sldOf(host);
+      const tld = tldOf(host);
+      const reg = registrable(host);
+      const subCount = host.split(".").length - reg.split(".").length;
+      const subs = host === reg ? [] :
+        host.slice(0, host.length - reg.length - 1).split(".").filter(Boolean);
+      const freeHost = FREE_HOSTS.find((f) => host === f || host.endsWith("." + f));
+      const brandLabels = (freeHost ? [] : [sld]).concat(subs).map((l) => l.replace(/-/g, ""));
+
+      // Transport & scheme
+      if (url.protocol === "http:") {
+        signals.push(signal("http", 12, "med", "No encryption (HTTP)",
+          "Credentials sent over HTTP are transmitted in plaintext without SSL protection."));
+      } else if (!/^https?:$/.test(url.protocol)) {
+        signals.push(signal("scheme", 15, "med", `Unusual scheme "${url.protocol}"`,
+          "Non-HTTP(S) schemes in links are rare in legitimate student messages."));
+      }
+      if (url.protocol === "https:") {
+        signals.push(signal("https", -5, "good", "Encrypted connection (HTTPS)",
+          "HTTPS is baseline hygiene — but does not by itself prove legitimacy."));
+      }
+
+      // Host shape
+      if (IP_HOST.test(host)) {
+        signals.push(signal("ip-host", 35, "high", "Raw IP address as hostname",
+          "Legitimate student or banking services almost never host logins on a bare IP."));
+      }
+      if (url.username || url.password) {
+        signals.push(signal("at-sign", 50, "high", "Credentials embedded in URL",
+          `The 'user@host' trick hides the real destination — the true host is '${host}'.`));
+      }
+      if (host.includes("xn--") || url.href.includes("xn--")) {
+        signals.push(signal("punycode", 40, "high", "Punycode/IDN hostname",
+          "Internationalized domains can render lookalike homoglyph characters."));
+      }
+      if (SUS_TLDS.has(tld)) {
+        signals.push(signal("tld", 18, "med", `High-abuse TLD ".${tld}"`,
+          "This TLD is cheap or disposable and statistically over-represented in phishing scams."));
+      }
+      if (SHORTENERS.has(reg)) {
+        signals.push(signal("shortener", 15, "med", "URL shortener",
+          "Short links conceal the true destination — expand before trusting campus notices."));
+      }
+      if (subCount >= 3) {
+        signals.push(signal("subdomains", 15, "med", `${subCount} nested subdomains`,
+          "Long chains like 'harvard.edu.login.secure.evil.com' bury the real domain."));
+      } else if (subCount === 2) {
+        signals.push(signal("subdomains", 6, "low", "Multiple subdomains",
+          "Slightly unusual nesting — verify the true registrable domain."));
+      }
+      const hyphens = (sld.match(/-/g) || []).length;
+      if (hyphens >= 2) {
+        signals.push(signal("hyphens", 10, "low", `${hyphens} hyphens in domain`,
+          "Stuffing like 'student-portal-verify' is a classic phishing tell."));
+      }
+      if (input.length > 100) {
+        signals.push(signal("length", 8, "low", `Very long URL (${input.length} chars)`,
+          "Overlong URLs are often used to push the real domain out of the browser address bar."));
+      }
+
+      // ================= STUDENT SHIELD HEURISTICS =================
+      // 1. Fake .EDU / University Spoofing in Host
+      const isGenuineEdu = isGenuineEduDomain(host);
+      if (!isGenuineEdu) {
+        // Did attacker embed .edu in subdomain or hyphenated domain on a non-edu TLD?
+        const hasEduLabel = subs.some((s) => s === "edu" || s.startsWith("edu-") || s.endsWith("-edu"));
+        const hasUniKeyword = UNIVERSITY_KEYWORDS.some((kw) => host.includes(kw));
+        const eduInSubdomainOrHost = host.includes(".edu.") || host.includes("-edu.") || hasEduLabel;
+
+        if (eduInSubdomainOrHost) {
+          signals.push(signal("student-edu-spoof", 42, "high",
+            "University / .EDU Domain Spoofing",
+            `'${host}' places '.edu' or university names inside subdomains on an unofficial commercial domain (${reg}).`,
+            "impersonation"));
+        } else if (hasUniKeyword && (host.includes("portal") || host.includes("login") || host.includes("sso") || host.includes("auth"))) {
+          signals.push(signal("student-portal-lookalike", 38, "high",
+            "University Portal / SSO Impersonation",
+            `Domain '${host}' mimics a university single-sign-on or campus portal on a non-educational domain.`,
+            "impersonation"));
         }
+      } else {
+        // Bonus for genuine .edu domain
+        signals.push(signal("edu-official", -15, "good",
+          "Official educational institution domain (.edu)",
+          "Domain is officially registered under an accredited educational institution registry."));
       }
-    }
 
-    // Credential-bait words inside the domain itself (app-supportecloud.info, login.foo.com)
-    // exempt gov/edu/mil — 'login.gov' is institutional naming, not bait
-    const INSTITUTIONAL = ["gov", "edu", "mil", "govt", "ac"];
-    if (!isBrandDomain(host) && !INSTITUTIONAL.includes(tld)) {
-      const hostBait = brandLabels.filter((l) => DOMAIN_BAIT.some((k) =>
-        l.includes(k) && !(l.startsWith(k) && l.length <= k.length + 3) &&
-        !(k === "banque" && l.startsWith("banquet"))));
-      if (hostBait.length) {
-        signals.push(signal("domain-bait", Math.min(24, 8 + hostBait.length * 8), "med",
-          `Credential-bait words in domain (${hostBait.slice(0, 3).join(", ")})`,
-          "Words like 'login/verify/support' baked into the hostname are phishing scaffolding."));
+      // 2. Student Financial Aid / FAFSA / Tuition Refund lures
+      const matchedAidKeyword = STUDENT_AID_KEYWORDS.find((k) => host.includes(k) || path.includes(k));
+      if (matchedAidKeyword && !host.endsWith(".gov") && !isGenuineEdu) {
+        signals.push(signal("student-financial-aid", 40, "high",
+          "Student Financial Aid / Tuition Refund Lure",
+          `URL references student financial aid or tuition refunds ('${matchedAidKeyword}') on an unofficial commercial host.`,
+          "impersonation"));
       }
-    }
+      // =============================================================
 
-    // Path keywords (only suspicious off-brand)
-    const kwHits = PATH_KEYWORDS.filter((k) => path.includes(k));
-    if (kwHits.length && !isBrandDomain(host)) {
-      signals.push(signal("path-kw", Math.min(20, 6 + kwHits.length * 4), "med",
-        `Credential-bait keywords in path (${kwHits.slice(0, 4).join(", ")})`,
-        "Login/verify/billing lures on an unrelated domain are a phishing pattern."));
-    }
+      // Brand impersonation
+      if (!isBrandDomain(host)) {
+        const deob = deobfuscate(sld);
+        for (const [brand] of Object.entries(BRANDS)) {
+          if (brand.length <= 3) continue;
+          if (deob === brand + "s") continue;
+          if (deob.length < brand.length && brand.includes(deob)) continue;
+          const dist = levenshtein(deob, brand);
+          if (deob !== brand && dist > 0 && dist <= (brand.length <= 6 ? 1 : 2)) {
+            signals.push(signal("typosquat", 45, "high",
+              `Lookalike of "${brand}" (edit distance ${dist})`,
+              `'${host}' differs subtly from the genuine ${BRANDS[brand][0]} — a typosquat.`,
+              "impersonation"));
+            break;
+          }
+          if (dist === 0 && deob !== sld) {
+            signals.push(signal("homoglyph", 45, "high",
+              `Homoglyph impersonation of "${brand}"`,
+              `'${sld}' uses lookalike characters to spell '${brand}'.`,
+              "impersonation"));
+            break;
+          }
+        }
 
-    // Executable download in path
-    const execExt = EXEC_EXTS.find((e) => url.pathname.toLowerCase().endsWith(e));
-    if (execExt) {
-      signals.push(signal("exec-download", 40, "high",
-        `Direct download of executable (${execExt})`,
-        "Links that download programs are drive-by malware bait — especially from messages."));
-    }
-
-    // Victim email embedded in URL (pre-filled phishing lures)
-    if (EMAIL_RE.test(path) || EMAIL_RE.test(url.search)) {
-      signals.push(signal("email-in-url", 25, "med",
-        "An email address is embedded in the URL",
-        "Phishers pre-fill lures with your address to make the page look personal."));
-    }
-
-    // Non-standard port
-    if (url.port && !["80", "443"].includes(url.port)) {
-      signals.push(signal("odd-port", 15, "med", `Non-standard port :${url.port}`,
-        "Legitimate login pages almost never live on alternate ports."));
-    }
-
-    // Brand name hidden inside a subdomain label (ledger-x.blogspot.com, paypal.secure.foo.com)
-    if (!isBrandDomain(host)) {
-      outer: for (const lbl of subs) {
-        const norm = lbl.toLowerCase().replace(/-/g, "");
-        if (norm.length < 4) continue;
-        for (const b of Object.keys(BRANDS)) {
-          if (norm === b + "s") continue; // dictionary plural
-          if (labelHasBrand(norm, b) ||
-              (norm.length >= b.length - 1 && norm.length <= b.length + 4 &&
-               levenshtein(deobfuscate(norm), b) <= 1)) {
-            signals.push(signal("brand-sub", 35, "high",
-              `Brand "${b}" hidden in subdomain "${lbl}"`,
-              "Phishing kits park lookalike brands in subdomains on unrelated or free-host domains."));
-            break outer;
+        // brand name embedded in hostname while real domain is something else
+        for (const [brand, domains] of Object.entries(BRANDS)) {
+          const owned = domains.some((d) => host === d || host.endsWith("." + d));
+          if (!owned && brandLabels.some((l) => labelHasBrand(l, brand))) {
+            signals.push(signal("brand-in-host", 35, "high",
+              `"${brand}" appears in hostname but domain is '${reg}'`,
+              "Attackers prepend brand names as subdomains to look legitimate.",
+              "impersonation"));
+            break;
           }
         }
       }
-    }
 
-    // High-entropy subdomain label (main.d3thcdi1mb7dsr.amplifyapp.com)
-    const rnd = subs.find((s) => s.length >= 12 && shannon(s) > 3.8);
-    if (rnd) {
-      signals.push(signal("rand-sub", 15, "med", `Random-looking subdomain "${rnd.slice(0, 18)}…"`,
-        "Auto-generated hostnames are typical of disposable phishing infrastructure."));
-    }
-
-    // Vowel-less label — generated gibberish (jfvlqz.top, wvltnsd.x)
-    const noVowel = isBrandDomain(host) ? null : (freeHost ? subs : [sld, ...subs]).find(
-      (l) => l.length >= 5 && /^[b-df-hj-np-tv-z0-9-]+$/.test(l) && !IP_HOST.test(l));
-    if (noVowel) {
-      signals.push(signal("vowelless", 15, "med", `Consonant-only label "${noVowel.slice(0, 16)}"`,
-        "Real words have vowels — vowel-less labels are machine-generated."));
-    }
-
-    // Digit-stuffed label (hub4571132.pro, qwo231sdx.club)
-    const digLabel = isBrandDomain(host) ? null :
-      subs.find((l) => (l.match(/\d/g) || []).length >= 3 && l.length >= 7);
-    if (digLabel) {
-      signals.push(signal("diglabel", 15, "med", `Digit-stuffed label "${digLabel.slice(0, 16)}"`,
-        "Numbers smuggled into hostnames are disposable-infra markers."));
-    }
-
-    // Fake TLD labels parked as subdomains (rauketnen.co.jp.evil.top)
-    const FAKE_TLD = new Set(["co", "com", "net", "org", "or", "edu", "gov",
-      "jp", "uk", "kr", "cn", "de", "fr", "au", "us", "br", "in"]);
-    if (!freeHost && !isBrandDomain(host)) {
-      const fake = subs.filter((l) => FAKE_TLD.has(l));
-      if (fake.length >= 2 || (fake.length && subs.length >= 2)) {
-        signals.push(signal("fake-tld", 18, "med",
-          `Fake suffix "${fake.join(".")}" parked in subdomains`,
-          "Abusing 'co.jp'-style labels makes a random domain look like a regional site."));
+      // Credential-bait words in domain
+      const INSTITUTIONAL = ["gov", "edu", "mil", "govt", "ac"];
+      if (!isBrandDomain(host) && !INSTITUTIONAL.includes(tld)) {
+        const hostBait = brandLabels.filter((l) => DOMAIN_BAIT.some((k) =>
+          l.includes(k) && !(l.startsWith(k) && l.length <= k.length + 3) &&
+          !(k === "banque" && l.startsWith("banquet"))));
+        if (hostBait.length) {
+          signals.push(signal("domain-bait", Math.min(24, 8 + hostBait.length * 8), "med",
+            `Credential-bait words in domain (${hostBait.slice(0, 3).join(", ")})`,
+            "Words like 'login/verify/support' baked into the hostname are phishing scaffolding.",
+            "structure"));
+        }
       }
-    }
 
-    // IP address hidden in subdomain labels (91-218-65-223.host.tld)
-    if (subs.some((l) => /^(\d{1,3}[-.]){3}\d{1,3}$/.test(l))) {
-      signals.push(signal("ip-in-sub", 25, "med", "IP address hidden inside hostname",
-        "Encoding the server IP in the domain is a botnet/phishing-kit tell."));
-    }
+      // Path keywords
+      const kwHits = PATH_KEYWORDS.filter((k) => path.includes(k));
+      if (kwHits.length && !isBrandDomain(host)) {
+        signals.push(signal("path-kw", Math.min(20, 6 + kwHits.length * 4), "med",
+          `Credential-bait keywords in path (${kwHits.slice(0, 4).join(", ")})`,
+          "Login/verify/billing lures on an unrelated domain are a phishing pattern."));
+      }
 
-    // Hex/UUID-style label (d131b80a-9b6a-....replit.dev)
-    if (subs.some((l) => /^[0-9a-f]{8,}(-[0-9a-f]{4,})*$/.test(l) && l.length >= 8)) {
-      signals.push(signal("hex-sub", 15, "med", "Hex/UUID-style subdomain label",
-        "Machine-generated identifiers in hostnames mark throwaway infrastructure."));
-    }
+      // Executable download in path
+      const execExt = EXEC_EXTS.find((e) => url.pathname.toLowerCase().endsWith(e));
+      if (execExt) {
+        signals.push(signal("exec-download", 40, "high",
+          `Direct download of executable (${execExt})`,
+          "Links that download executable programs from unexpected sites are drive-by malware risks."));
+      }
 
-    // Mixed letters+digits SLD (zey6c6.info, yenib6.top)
-    if (/[a-z]/.test(sld) && /\d/.test(sld) && (sld.match(/\d/g) || []).length >= 2 &&
-        sld.length >= 6 && !IP_HOST.test(host) && !freeHost && !isBrandDomain(host)) {
-      signals.push(signal("mixed-sld", 12, "low", `Letters+digits mixed domain "${sld}"`,
-        "Alphanumeric salad domains are typical of domain-generation algorithms."));
-    }
+      // Victim email in URL
+      if (EMAIL_RE.test(path) || EMAIL_RE.test(url.search)) {
+        signals.push(signal("email-in-url", 25, "med",
+          "An email address is embedded in the URL",
+          "Phishers pre-fill lures with your student email address to make the page appear legitimate."));
+      }
 
-    // Long opaque blob in path (base64 payloads: /asdf/anzhenf1zx...=)
-    if (/\/[A-Za-z0-9+_=-]{24,}/.test(path) || /=[A-Za-z0-9+_=-]{24,}/.test(path)) {
-      signals.push(signal("blob-path", 18, "med", "Opaque encoded blob in URL path",
-        "Base64-looking payloads in links smuggle data past URL inspection."));
-    }
+      // Non-standard port
+      if (url.port && !["80", "443"].includes(url.port)) {
+        signals.push(signal("odd-port", 15, "med", `Non-standard port :${url.port}`,
+          "Legitimate student login pages almost never run on alternative network ports."));
+      }
 
-    // Credential bait on a free host
-    const brandInPath = Object.keys(BRANDS).find((b) => path.includes(b));
-    // brand name in the path on a domain that doesn't own it (fingersh.com/amex_...)
-    if (!isBrandDomain(host) && brandInPath && !freeHost) {
-      signals.push(signal("brand-path", 20, "med",
-        `Brand "${brandInPath}" in path on unrelated domain '${reg}'`,
-        "Real brands don't park their login pages on strangers' domains."));
-    }
-    if (freeHost && (kwHits.length || brandInPath)) {
-      signals.push(signal("freehost-bait", brandInPath ? 40 : 30, "med",
-        brandInPath
-          ? `Brand "${brandInPath}" in path on free host "${freeHost}"`
-          : `Credential bait on free host "${freeHost}"`,
-        "Phishing overwhelmingly lives on free hosting — disposable, zero cost, looks like a real site."));
-    }
+      // High-entropy domain
+      if (sld.length >= 12 && shannon(sld) > 3.6 && !COMMON_SLD_WORDS.test(sld)) {
+        signals.push(signal("entropy", 12, "med", "Random-looking domain name",
+          `High character entropy (${shannon(sld).toFixed(1)} bits) suggests a generated domain.`));
+      }
 
-    // Random-looking domain
-    if (sld.length >= 12 && shannon(sld) > 3.6 && !COMMON_SLD_WORDS.test(sld)) {
-      signals.push(signal("entropy", 12, "med", "Random-looking domain name",
-        `High character entropy (${shannon(sld).toFixed(1)} bits) suggests a generated domain.`));
-    }
+      // Benign bonus
+      if (isBrandDomain(host)) {
+        signals.push(signal("brand-official", -20, "good",
+          "Official brand domain", "Hostname belongs to a known verified service."));
+      }
 
-    // Benign bonus
-    if (isBrandDomain(host)) {
-      signals.push(signal("brand-official", -20, "good",
-        "Official brand domain", `Hostname belongs to a known legitimate domain.`));
+      return finalize(signals, input, url);
+    } catch (err) {
+      return createFallback(raw, err.message);
     }
-
-    return finalize(signals, input, url);
   }
 
   // ---- page/DOM analysis ------------------------------------------------------
 
-  // snapshot: {url, passwordFields, forms:[{action,method,hasPassword}],
-  //            inputNames:[], hiddenIframes, externalLinks, totalLinks, text}
   function analyzePage(snap) {
-    const signals = [];
-    let pageHost = "";
-    try { pageHost = new URL(snap.url).hostname.toLowerCase(); } catch (e) {}
+    try {
+      if (!snap || typeof snap !== "object") return [];
+      const signals = [];
+      let pageHost = "";
+      try { pageHost = new URL(snap.url).hostname.toLowerCase(); } catch (e) {}
 
-    for (const f of snap.forms || []) {
-      if (!f.hasPassword) continue;
-      if (!f.action) {
-        signals.push(signal("form-noaction", 15, "med",
-          "Password form with no declared destination",
-          "The submit target is set dynamically — a common credential-harvest pattern."));
-        continue;
-      }
-      let a;
-      try { a = new URL(f.action, snap.url); } catch (e) { continue; }
-      if (a.protocol === "http:") {
-        signals.push(signal("form-http", 45, "high",
-          "Password submitted over plaintext HTTP",
-          "Anything you type here is sent unencrypted."));
-      } else if (a.hostname.toLowerCase() !== pageHost &&
-                 registrable(a.hostname.toLowerCase()) !== registrable(pageHost)) {
-        signals.push(signal("form-xdomain", 45, "high",
-          `Password form posts to a different domain (${a.hostname})`,
-          "Legitimate login forms almost never send credentials cross-site."));
-      }
-    }
-    if ((snap.passwordFields || 0) > 0 && pageHost && !isBrandDomain(pageHost)) {
-      const sld = sldOf(pageHost);
-      const deob = deobfuscate(sld);
-      for (const [brand] of Object.entries(BRANDS)) {
-        if (levenshtein(deob, brand) <= 2 && deob !== brand) {
-          signals.push(signal("cred-lookalike", 30, "high",
-            `Login form on a ${brand}-lookalike domain`,
-            "A password box on an impersonation domain is the endgame of phishing."));
-          break;
+      const isEdu = isGenuineEduDomain(pageHost);
+
+      for (const f of snap.forms || []) {
+        if (!f.hasPassword) continue;
+        if (!f.action) {
+          signals.push(signal("form-noaction", 15, "med",
+            "Password form with no declared destination",
+            "The submit target is set dynamically — a common credential-harvest pattern."));
+          continue;
+        }
+        let a;
+        try { a = new URL(f.action, snap.url); } catch (e) { continue; }
+        if (a.protocol === "http:") {
+          signals.push(signal("form-http", 45, "high",
+            "Password submitted over plaintext HTTP",
+            "Anything you type here is sent unencrypted over the network.",
+            "credential"));
+        } else if (a.hostname.toLowerCase() !== pageHost &&
+                   registrable(a.hostname.toLowerCase()) !== registrable(pageHost)) {
+          signals.push(signal("form-xdomain", 45, "high",
+            `Password form posts to an external domain (${a.hostname})`,
+            "Legitimate campus logins almost never transmit student passwords cross-site.",
+            "credential"));
         }
       }
-    }
 
-    const sensitive = (snap.inputNames || []).filter((n) =>
-      /ssn|social.?sec|cvv|cvc|card.?num|otp|one.?time|pin|seed.?phrase|private.?key/i.test(n));
-    if (sensitive.length) {
-      signals.push(signal("sensitive-fields", 25, "high",
-        `Page asks for high-value data (${sensitive.slice(0, 3).join(", ")})`,
-        "Requests for SSNs, card CVVs, OTPs or seed phrases deserve scrutiny."));
-    }
+      // Student ID / University credential harvesting check
+      const studentInputTerms = (snap.inputNames || []).filter((n) =>
+        /student.?id|studentid|campus.?id|netid|banner.?id|matriculation|student.?email|university.?id/i.test(n));
+      if (studentInputTerms.length && !isEdu && (snap.passwordFields || 0) > 0) {
+        signals.push(signal("student-portal-lookalike", 45, "high",
+          `Harvesting Student Credentials (${studentInputTerms.slice(0, 2).join(", ")})`,
+          "A password form requesting student ID / university credentials was found on a non-educational domain.",
+          "credential"));
+      }
 
-    if ((snap.hiddenIframes || 0) > 0) {
-      signals.push(signal("hidden-iframe", 20, "med",
-        `${snap.hiddenIframes} hidden iframe(s)`,
-        "Invisible frames are used for clickjacking and silent redirects."));
-    }
+      // General sensitive fields
+      const sensitive = (snap.inputNames || []).filter((n) =>
+        /ssn|social.?sec|cvv|cvc|card.?num|otp|one.?time|pin|seed.?phrase|private.?key|routing.?num|bank.?account/i.test(n));
+      if (sensitive.length) {
+        signals.push(signal("sensitive-fields", 30, "high",
+          `Page asks for sensitive financial/identity data (${sensitive.slice(0, 3).join(", ")})`,
+          "Direct requests for SSNs, bank accounts, or OTPs deserve high scrutiny.",
+          "credential"));
+      }
 
-    if ((snap.totalLinks || 0) >= 10 && (snap.externalLinks || 0) / snap.totalLinks > 0.9) {
-      signals.push(signal("ext-links", 10, "low",
-        "Nearly all links point off-site",
-        "Throwaway phishing pages often link out instead of hosting real content."));
-    }
+      // Hidden iframes
+      if ((snap.hiddenIframes || 0) > 0) {
+        signals.push(signal("hidden-iframe", 20, "med",
+          `${snap.hiddenIframes} hidden iframe(s)`,
+          "Invisible frames are used for clickjacking and covert redirects."));
+      }
 
-    const text = (snap.text || "").toLowerCase();
-    const hits = URGENCY_PHRASES.filter((p) => text.includes(p));
-    if (hits.length) {
-      signals.push(signal("urgency", Math.min(30, 8 + hits.length * 5), "med",
-        `Pressure language detected (${hits.length} phrases)`,
-        `e.g. "${hits[0]}" — urgency and fear are core social-engineering levers.`));
-    }
+      // External links ratio
+      if ((snap.totalLinks || 0) >= 10 && (snap.externalLinks || 0) / snap.totalLinks > 0.9) {
+        signals.push(signal("ext-links", 10, "low",
+          "Nearly all links point off-site",
+          "Throwaway phishing pages often link out to genuine resources to mimic legitimacy."));
+      }
 
-    return signals;
+      // Text analysis: Urgency & Student Panic
+      const text = (snap.text || "").toLowerCase();
+      const studentUrgentHits = STUDENT_URGENCY_PHRASES.filter((p) => text.includes(p));
+      if (studentUrgentHits.length) {
+        signals.push(signal("student-urgency", 30, "high",
+          `Student panic language detected ("${studentUrgentHits[0]}")`,
+          "Threats of student account deactivation or loss of campus access are primary student phishing levers.",
+          "urgency"));
+      }
+
+      const hits = URGENCY_PHRASES.filter((p) => text.includes(p));
+      if (hits.length && !studentUrgentHits.length) {
+        signals.push(signal("urgency", Math.min(30, 8 + hits.length * 5), "med",
+          `Pressure language detected (${hits.length} phrases)`,
+          `e.g. "${hits[0]}" — urgency and fear are core social-engineering levers.`,
+          "urgency"));
+      }
+
+      return signals;
+    } catch (err) {
+      console.warn("PhishLens engine page analysis caught error:", err);
+      return [];
+    }
   }
 
-  // ---- scoring ---------------------------------------------------------------
+  // ---- scoring and shared result formatting ----------------------------------
+
+  function categorizeThreat(signals, score) {
+    if (score < 15) return "safe";
+    const ids = new Set(signals.map((s) => s.id));
+    if (ids.has("student-edu-spoof") || ids.has("student-portal-lookalike")) {
+      return "student_portal_spoof";
+    }
+    if (ids.has("student-financial-aid") || ids.has("student-bursary-scam")) {
+      return "financial_aid_scam";
+    }
+    if (ids.has("form-http") || ids.has("form-xdomain") || ids.has("cred-lookalike") || ids.has("sensitive-fields")) {
+      return "credential_harvest";
+    }
+    if (ids.has("typosquat") || ids.has("brand-in-host") || ids.has("homoglyph")) {
+      return "typosquat";
+    }
+    if (ids.has("student-urgency") || ids.has("urgency")) {
+      return "urgency_scam";
+    }
+    return score >= 40 ? "suspicious_structure" : "caution_general";
+  }
+
+  function generateSummary(level, threatCategory, host, topSignal) {
+    if (level === "likely safe") {
+      return "No suspicious phishing indicators detected. Site appears standard.";
+    }
+    switch (threatCategory) {
+      case "student_portal_spoof":
+        return `High risk: ${host || "This site"} appears to be an unofficial clone spoofing a university or student portal.`;
+      case "financial_aid_scam":
+        return `Danger: Fake student aid or tuition refund lure detected. Do not submit banking credentials or SSN.`;
+      case "credential_harvest":
+        return `Critical warning: Page forms transmit passwords unencrypted or off-domain. Never enter passwords here!`;
+      case "typosquat":
+        return `Deceptive domain: ${host || "This site"} uses typosquatting or lookalike characters to impersonate a legitimate service.`;
+      case "urgency_scam":
+        return `Social engineering detected: Page uses aggressive account deactivation threats to manipulate students.`;
+      default:
+        return topSignal ? `${topSignal.title}. Exercise caution before entering credentials.` : "Multiple suspicious indicators detected.";
+    }
+  }
+
+  function getStudentAdvice(threatCategory, host) {
+    const defaultAdvice = [
+      "Always check the browser address bar to confirm the domain ends with your university's genuine .edu address.",
+      "Campus IT and student services will never email asking you to verify your password or Duo MFA codes.",
+      "Never input your Student ID or SSO credentials on forms hosted on external or commercial domains."
+    ];
+
+    if (threatCategory === "student_portal_spoof") {
+      return [
+        `Do not enter your Student ID or campus login on '${host}'.`,
+        "Access your university portal directly by typing your school's verified URL or through official bookmarks.",
+        "If you already entered credentials, immediately change your university password from an official campus computer."
+      ];
+    }
+    if (threatCategory === "financial_aid_scam") {
+      return [
+        "Official student financial aid and FAFSA updates only occur on studentaid.gov or your institution's .edu site.",
+        "Never share student debit cards, bank account numbers, or SSN for an unexpected grant or bursary.",
+        "Contact your university Financial Aid office directly to confirm any disbursement notice."
+      ];
+    }
+    return defaultAdvice;
+  }
 
   function finalize(signals, input, url) {
     const raw = signals.reduce((s, x) => s + x.weight, 0);
@@ -719,28 +675,111 @@
       score >= 70 ? "dangerous" :
       score >= 40 ? "suspicious" :
       score >= 15 ? "caution" : "likely safe";
+
+    const host = url ? url.hostname : "";
+    const sortedSignals = signals.sort((a, b) => b.weight - a.weight);
+    const threatCategory = categorizeThreat(sortedSignals, score);
+    const topSignal = sortedSignals.find((s) => s.weight > 0) || sortedSignals[0];
+    const summary = generateSummary(level, threatCategory, host, topSignal);
+
+    const isStudentTargeted = threatCategory.startsWith("student_") ||
+      threatCategory === "financial_aid_scam" ||
+      sortedSignals.some((s) => s.id.startsWith("student-"));
+
+    const detectedTargets = [];
+    if (sortedSignals.some((s) => s.id === "student-edu-spoof" || s.id === "student-portal-lookalike")) {
+      detectedTargets.push("University SSO / Campus Portal");
+    }
+    if (sortedSignals.some((s) => s.id === "student-financial-aid")) {
+      detectedTargets.push("Financial Aid / Bursary");
+    }
+    if (sortedSignals.some((s) => s.id === "student-urgency")) {
+      detectedTargets.push("Campus Account Access");
+    }
+
     return {
-      ok: true, input, score, level,
-      host: url ? url.hostname : undefined,
-      signals: signals.sort((a, b) => b.weight - a.weight),
+      ok: true,
+      version: ENGINE_VERSION,
+      timestamp: Date.now(),
+      url: input,
+      input,
+      host,
+      score,
+      level,
+      isHighRisk: score >= 70,
+      threatCategory,
+      summary,
+      signals: sortedSignals,
+      pageSignals: [],
+      studentProtection: {
+        isStudentTargeted,
+        detectedTargets,
+        advice: getStudentAdvice(threatCategory, host)
+      },
+      error: null
+    };
+  }
+
+  function createFallback(input, errorMessage) {
+    let host = "";
+    try { if (input) host = new URL(input).hostname; } catch (e) {}
+    return {
+      ok: false,
+      version: ENGINE_VERSION,
+      timestamp: Date.now(),
+      url: input || "",
+      input: input || "",
+      host,
+      score: 0,
+      level: "unknown",
+      isHighRisk: false,
+      threatCategory: "safe",
+      summary: errorMessage ? `Scan limited: ${errorMessage}` : "Unable to analyze site.",
+      signals: [],
+      pageSignals: [],
+      studentProtection: {
+        isStudentTargeted: false,
+        detectedTargets: [],
+        advice: ["Verify site authenticity manually before entering sensitive credentials."]
+      },
+      error: errorMessage || null
     };
   }
 
   function analyze(raw, snap) {
-    const urlResult = analyzeUrl(raw);
-    if (snap) {
-      const extra = analyzePage(snap);
-      urlResult.signals = urlResult.signals.concat(extra)
-        .sort((a, b) => b.weight - a.weight);
-      const re = finalize(urlResult.signals, urlResult.input,
-        (() => { try { return new URL(urlResult.input); } catch (e) { return null; } })());
-      urlResult.score = re.score;
-      urlResult.level = re.level;
+    try {
+      const urlResult = analyzeUrl(raw);
+      if (snap) {
+        const extra = analyzePage(snap);
+        urlResult.pageSignals = extra;
+        urlResult.signals = urlResult.signals.concat(extra)
+          .sort((a, b) => b.weight - a.weight);
+        const re = finalize(urlResult.signals, urlResult.input,
+          (() => { try { return new URL(urlResult.input); } catch (e) { return null; } })());
+        urlResult.score = re.score;
+        urlResult.level = re.level;
+        urlResult.isHighRisk = re.isHighRisk;
+        urlResult.threatCategory = re.threatCategory;
+        urlResult.summary = re.summary;
+        urlResult.studentProtection = re.studentProtection;
+      }
+      return urlResult;
+    } catch (err) {
+      return createFallback(raw, err.message);
     }
-    return urlResult;
   }
 
-  const api = { analyzeUrl, analyzePage, analyze, BRANDS, levenshtein, deobfuscate };
+  const api = {
+    version: ENGINE_VERSION,
+    analyzeUrl,
+    analyzePage,
+    analyze,
+    BRANDS,
+    levenshtein,
+    deobfuscate,
+    createFallback
+  };
+
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else global.PhishLens = api;
 })(typeof window !== "undefined" ? window : globalThis);

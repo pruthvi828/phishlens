@@ -3,24 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PhishLens — real-time, private phishing detection</title>
+<title>PhishLens Student Shield — Real-time Client-Side Phishing Protection</title>
 <style>
   *{box-sizing:border-box}
-  body{margin:0;font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;background:#0f172a;color:#e2e8f0}
-  .wrap{max-width:880px;margin:0 auto;padding:0 20px}
-  header{padding:56px 0 28px;text-align:center}
-  h1{font-size:40px;margin:0;background:linear-gradient(90deg,#2dd4bf,#38bdf8);
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .tag{color:#94a3b8;margin-top:8px;font-size:17px}
+  body{margin:0;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0b1120;color:#e2e8f0}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+  header{padding:48px 0 24px;text-align:center}
+  h1{font-size:38px;margin:0;background:linear-gradient(90deg,#38bdf8,#818cf8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+  .tag{color:#94a3b8;margin-top:8px;font-size:16px}
   .badges{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .badge{border:1px solid #334155;border-radius:999px;padding:3px 12px;font-size:12px;color:#94a3b8}
-  .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin:18px 0}
-  h2{margin:0 0 12px;font-size:19px}
+  .badge{border:1px solid #334155;border-radius:999px;padding:3px 12px;font-size:12px;color:#94a3b8;background:#0f172a}
+  .badge.highlight{border-color:#38bdf8;color:#38bdf8}
+  .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:22px;margin:18px 0}
+  h2{margin:0 0 12px;font-size:19px;color:#f8fafc}
   input[type=text]{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;
     border-radius:8px;padding:12px 14px;font:14px ui-monospace,monospace}
-  button{margin-top:10px;background:#14b8a6;border:0;color:#042f2e;font-weight:700;
-    padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px}
-  button:hover{background:#2dd4bf}
+  input[type=text]:focus{outline:none;border-color:#38bdf8}
+  button{margin-top:10px;background:#0284c7;border:0;color:#ffffff;font-weight:700;
+    padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;transition:background .15s}
+  button:hover{background:#0369a1}
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .chip{background:#0f172a;border:1px solid #334155;color:#7dd3fc;border-radius:6px;
     padding:5px 10px;font:12px ui-monospace,monospace;cursor:pointer}
@@ -34,17 +36,18 @@
   .sig b{display:block;font-size:13px}
   .sig span{color:#94a3b8;font-size:12px}
   .sig.high{border-color:#dc2626}.sig.med{border-color:#ea580c}.sig.low{border-color:#ca8a04}.sig.good{border-color:#16a34a}
+  .student-advice-box{background:#0f172a;border-left:3px solid #38bdf8;padding:12px;border-radius:6px;margin:12px 0}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
   .mini{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px}
   .mini b{color:#7dd3fc;font-size:13px}
   .mini p{margin:6px 0 0;color:#94a3b8;font-size:12px}
   a{color:#38bdf8}
-  code{background:#0f172a;padding:1px 6px;border-radius:4px;font-size:12px;color:#7dd3fc}
+  code{background:#0f172a;padding:2px 6px;border-radius:4px;font-size:12px;color:#7dd3fc}
   ol{color:#94a3b8;font-size:14px;padding-left:20px}
   li{margin:4px 0}
   footer{color:#64748b;font-size:12px;text-align:center;padding:30px 0 50px}
   .demo-link{display:block;background:#0f172a;border:1px solid #334155;border-radius:8px;
-    padding:12px 14px;margin:8px 0;text-decoration:none;color:#e2e8f0}
+    padding:12px 14px;margin:8px 0;text-decoration:none;color:#e2e8f0;transition:border-color .15s}
   .demo-link:hover{border-color:#38bdf8}
   .demo-link small{color:#94a3b8;display:block;margin-top:2px}
 </style>
@@ -52,88 +55,116 @@
 <body>
 <div class="wrap">
 <header>
-  <h1>PhishLens</h1>
-  <div class="tag">Real-time phishing detection that runs entirely in your browser — and explains itself.</div>
+  <h1>🛡️ PhishLens Student Shield</h1>
+  <div class="tag">Real-time, zero-network phishing protection engineered for students &amp; university communities.</div>
   <div class="badges">
-    <span class="badge">100% client-side</span>
-    <span class="badge">no uploads, no tracking</span>
-    <span class="badge">browser extension + web analyzer</span>
-    <span class="badge">TLN Cybersecurity Challenge 2026</span>
+    <span class="badge highlight">Student Shield v2.0</span>
+    <span class="badge">100% Client-Side MV3</span>
+    <span class="badge">No Paid APIs / Zero Network Calls</span>
+    <span class="badge">MIT Licensed</span>
   </div>
 </header>
 
 <div class="card">
-  <h2>🔍 Analyze a link — right here, right now</h2>
-  <input type="text" id="u" placeholder="https://paypa1-secure-login.tk/verify/account" autofocus>
-  <button id="go">Analyze</button>
+  <h2>🔍 Analyze a Link — Instant Local Inspection</h2>
+  <input type="text" id="u" placeholder="https://harvard.edu.login-portal.net/verify" autofocus>
+  <button id="go">Analyze Link Locally</button>
   <div class="chips" id="chips"></div>
   <div id="out"></div>
 </div>
 
 <div class="card">
-  <h2>🎣 Live bait pages (test the extension)</h2>
+  <h2>🎣 Live Student Phishing Bait Demos (Test the Chrome Extension)</h2>
   <p style="color:#94a3b8;font-size:13px;margin-top:0">
-    These demo pages are deliberately crafted phishing lookalikes. With the PhishLens
-    extension installed, visiting them fires a real in-page warning — driven by page-content
-    signals (credential forms, urgency language, hidden iframes), not just the URL.
+    These live demo pages simulate common student phishing vectors. With the extension installed in Chrome, visiting them automatically triggers real-time in-page Shadow DOM warning banners and desktop notifications.
   </p>
-  <a class="demo-link" href="demo/paypal-verify.html">⚠️ Fake "PayPal — account suspended" page
-    <small>password form posting cross-site over HTTP · urgency copy · CVV field · hidden iframe</small></a>
-  <a class="demo-link" href="demo/safe-bank.html">✅ Ordinary banking page (control)
-    <small>same-origin HTTPS form · calm copy → should score low</small></a>
+  <a class="demo-link" href="demo/student-portal-phish.html">
+    🚨 <b>Fake University SSO Portal (Account Suspended Scam)</b>
+    <small>Deceptive .edu subdomain · Password form posting unencrypted over HTTP · Student ID harvesting · 24-hour panic language</small>
+  </a>
+  <a class="demo-link" href="demo/campus-aid-scam.html">
+    💸 <b>Emergency Student Bursary &amp; Tuition Relief Scam</b>
+    <small>Fictitious $1,850 grant · Solicits student SSN, bank routing, and account credentials · Unofficial commercial domain</small>
+  </a>
+  <a class="demo-link" href="demo/paypal-verify.html">
+    ⚠️ <b>Fake Brand Credential Harvester (PayPal Clone)</b>
+    <small>Cross-site form submission · Urgency copy · CVV harvesting · Hidden iframes</small>
+  </a>
+  <a class="demo-link" href="demo/legit-university.html">
+    ✅ <b>Verified University Resource Page (Control)</b>
+    <small>Clean official campus info · Zero suspicious indicators → Tests false-positive resistance (likely safe verdict)</small>
+  </a>
 </div>
 
 <div class="card">
-  <h2>How it works</h2>
+  <h2>How Student Shield Works (100% Local Heuristics)</h2>
   <div class="grid">
-    <div class="mini"><b>Typosquat &amp; homoglyph radar</b><p>Edit-distance + confusable-character folding catches <code>paypa1</code>, <code>g00gle</code>, Cyrillic lookalikes and punycode tricks like <code>xn--pple-43d.com</code>.</p></div>
-    <div class="mini"><b>URL forensics</b><p>Abused TLDs, <code>user@host</code> deception, raw-IP hosts, shorteners, subdomain stuffing, path keywords (<code>/verify /billing</code>), entropy analysis.</p></div>
-    <div class="mini"><b>Page-content signals</b><p>Password forms posting off-domain or over HTTP, requests for CVV/SSN/OTP, hidden iframes, and urgency language ("verify within 24 hours").</p></div>
-    <div class="mini"><b>Explainable score</b><p>Every flag carries a human-readable reason — the tool teaches users <i>why</i> a link is dangerous, not just that it is.</p></div>
+    <div class="mini">
+      <b>🎓 .EDU Spoofing &amp; Portal Radar</b>
+      <p>Detects attackers parking fake <code>.edu</code> labels or university names inside subdomains (e.g. <code>mit.edu.portal-login.com</code>) to fool students.</p>
+    </div>
+    <div class="mini">
+      <b>💸 Financial Aid &amp; Tuition Scams</b>
+      <p>Catches unauthorized third-party sites using FAFSA, tuition refund, or student bursary lures to harvest banking and SSN data.</p>
+    </div>
+    <div class="mini">
+      <b>🔒 Credential-Harvest Form Traps</b>
+      <p>Inspects DOM forms in real-time for password inputs posting off-domain, over unencrypted HTTP, or targeting Student IDs / NetIDs.</p>
+    </div>
+    <div class="mini">
+      <b>🔔 Deduplicated Desktop Alerts</b>
+      <p>Dispatches high-priority desktop notifications on dangerous student sites with cooldowns that prevent notification spam.</p>
+    </div>
   </div>
 </div>
 
 <div class="card">
-  <h2>Install the extension (2 minutes)</h2>
+  <h2>Install in Chrome (60 Seconds)</h2>
   <ol>
-    <li>Clone the repo: <code>git clone https://github.com/Georgefifth/phishlens.git</code></li>
-    <li>Chrome → <code>chrome://extensions</code> → enable <b>Developer mode</b> → <b>Load unpacked</b> → select <code>phishlens/extension/</code></li>
-    <li>Firefox → <code>about:debugging → This Firefox → Load Temporary Add-on</code> → pick <code>manifest.json</code></li>
-    <li>Browse normally — the toolbar badge shows each page's risk. Open this page's bait links to see it fire.</li>
+    <li>Open Chrome and navigate to <code>chrome://extensions</code></li>
+    <li>Toggle <b>Developer mode</b> ON in the top-right corner.</li>
+    <li>Click <b>Load unpacked</b> and select the <code>extension/</code> folder.</li>
+    <li>Visit any student demo link above to see the automatic in-page warning banner and desktop alerts in action!</li>
   </ol>
 </div>
 
 <footer>
-  Built for the TLN Cybersecurity Challenge 2026 · MIT-licensed ·
-  <a href="https://github.com/Georgefifth/phishlens">source on GitHub</a><br>
-  AI disclosure: developed with an AI pair programmer (Devin); all analysis logic is deterministic local heuristics.
+  PhishLens Student Shield · Preserves Original MIT License ·
+  Attribution: Based on <a href="https://github.com/Georgefifth/phishlens">Georgefifth/phishlens</a><br>
+  Engineered for the Student Phishing Protection Challenge.
 </footer>
 </div>
 
 <script src="engine.js"></script>
 <script>
-const COLORS = {dangerous:"#dc2626",suspicious:"#ea580c",caution:"#ca8a04","likely safe":"#16a34a",unknown:"#6b7280"};
+const COLORS = {
+  dangerous: "#dc2626",
+  suspicious: "#ea580c",
+  caution: "#ca8a04",
+  "likely safe": "#16a34a",
+  unknown: "#64748b"
+};
+
 const SAMPLES = [
-  "https://www.paypal.com/signin",
-  "http://paypa1-secure-login.tk/verify/account/update",
-  "https://paypal.com.account-verify.secure-session.top/login",
+  "https://harvard.edu.login-portal.net/verify",
+  "https://student-loan-forgiveness-claim.org/bursary",
+  "http://paypa1-secure-login.tk/verify/account",
+  "https://campus-sso.student-portal.evil-auth.com",
+  "https://my.harvard.edu",
   "https://xn--pple-43d.com/login",
-  "https://google.com@evil-corp.ru/phish",
-  "https://bit.ly/3xK9mPq",
-  "http://192.168.4.22/webscr?cmd=login",
-  "data:text/html;base64,PGZvcm0+TG9naW48L2Zvcm0+",
-  "http://update-center.tk/files/Facture.exe",
-  "https://secure-verify.top/login?u=victim@gmail.com",
-  "https://accounts.google.com",
+  "https://studentaid.gov"
 ];
+
 const chips = document.getElementById("chips");
 for (const s of SAMPLES) {
   const c = document.createElement("span");
-  c.className = "chip"; c.textContent = s.length > 48 ? s.slice(0, 45) + "…" : s;
+  c.className = "chip";
+  c.textContent = s.length > 42 ? s.slice(0, 39) + "…" : s;
   c.title = s;
   c.onclick = () => { document.getElementById("u").value = s; run(); };
   chips.appendChild(c);
 }
+
 function run() {
   const v = document.getElementById("u").value.trim();
   if (!v) return;
@@ -141,16 +172,36 @@ function run() {
   const c = COLORS[r.level] || COLORS.unknown;
   const out = document.getElementById("out");
   out.style.display = "block";
-  if (!r.ok) { out.innerHTML = `<div class="sig med"><b>Could not parse</b><span>${r.error}</span></div>`; return; }
+
+  if (!r.ok) {
+    out.innerHTML = `<div class="sig med"><b>Could not parse</b><span>${r.error}</span></div>`;
+    return;
+  }
+
+  let adviceHtml = "";
+  if (r.studentProtection && r.studentProtection.isStudentTargeted) {
+    adviceHtml = `
+      <div class="student-advice-box">
+        <b style="color:#7dd3fc;display:block;margin-bottom:4px;">🛡️ Student Shield Recommendation:</b>
+        <div style="font-size:12px;color:#e2e8f0;">${r.studentProtection.advice[0] || ""}</div>
+      </div>
+    `;
+  }
+
   out.innerHTML = `
     <div class="gauge">
-      <div class="ring" style="background:${c}22;border:4px solid ${c}">${r.score}</div>
-      <div><div class="lvl" style="color:${c}">${r.level}</div>
-      <div style="color:#94a3b8;font-size:12px;word-break:break-all">${r.host || ""}</div></div>
-    </div>` +
-    r.signals.map((s) =>
-      `<div class="sig ${s.severity}"><b>${s.title}</b><span>${s.detail}</span></div>`).join("");
+      <div class="ring" style="background:${c}22;border:4px solid ${c};color:${c};">${r.score}</div>
+      <div>
+        <div class="lvl" style="color:${c};">${r.level} (${r.score}/100)</div>
+        <div style="color:#94a3b8;font-size:12px;word-break:break-all;">${r.host || ""}</div>
+        <div style="color:#e2e8f0;font-size:12px;margin-top:4px;">${r.summary || ""}</div>
+      </div>
+    </div>
+    ${adviceHtml}
+  ` + (r.signals || []).map((s) =>
+    `<div class="sig ${s.severity}"><b>${s.title}</b><span>${s.detail}</span></div>`).join("");
 }
+
 document.getElementById("go").onclick = run;
 document.getElementById("u").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
 </script>
