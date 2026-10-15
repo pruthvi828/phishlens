@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+  <title>PhishGuard AI | Message Security</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="PhishGuard AI home">
+      <span class="brand-icon">✳</span>
+      <span>PhishGuard <span class="accent">AI</span></span>
+    </a>
+    <div class="topbar-right">
+      <span class="status-dot"></span>
+      <span>Message security</span>
+      <span class="version">HACKATHON MVP</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow"><span>✦</span> AI-POWERED MESSAGE PROTECTION</div>
+      <h1>Think before<br>you <span class="gradient-text">click.</span></h1>
+      <p class="hero-copy">
+        Analyze suspicious messages, uncover phishing warning signs,
+        and find out what to do next.
+      </p>
+      <div class="trust-row">
+        <span>✓ Explainable results</span>
+        <span>✓ Risk assessment</span>
+        <span>✓ Actionable guidance</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="panel input-panel">
+        <div class="panel-heading">
+          <div>
+            <div class="section-kicker">01 / INPUT</div>
+            <h2>Inspect a message</h2>
+          </div>
+          <span class="step-icon">↗</span>
+        </div>
+
+        <form id="analyze-form">
+          <label for="sender">SENDER <span class="optional">OPTIONAL</span></label>
+          <input
+            id="sender"
+            name="sender"
+            type="text"
+            maxlength="200"
+            placeholder="e.g. scholarship@example.com"
+            autocomplete="off"
+          >
+
+          <div class="label-row">
+            <label for="message">MESSAGE CONTENT</label>
+            <span id="char-count">0 / 5000</span>
+          </div>
+          <textarea
+            id="message"
+            name="message"
+            rows="8"
+            maxlength="5000"
+            required
+            placeholder="Paste the email, SMS, scholarship offer or internship message here..."
+          ></textarea>
+
+          <div class="sample-heading">TRY A SAMPLE</div>
+          <div class="sample-buttons">
+            <button type="button" class="sample-btn" data-sample="normal">
+              <span class="sample-dot green"></span> College notice
+            </button>
+            <button type="button" class="sample-btn" data-sample="scholarship">
+              <span class="sample-dot red"></span> Scholarship offer
+            </button>
+            <button type="button" class="sample-btn" data-sample="credentials">
+              <span class="sample-dot amber"></span> Account alert
+            </button>
+          </div>
+
+          <button type="submit" id="analyze-btn" class="primary-btn">
+            <span id="button-icon">⌕</span>
+            <span id="button-label">Analyze message</span>
+            <span class="button-arrow">→</span>
+          </button>
+
+          <p class="privacy-note">
+            <span>▣</span>
+            Analyze responsibly. Never paste real passwords, OTPs or private credentials.
+          </p>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+        </form>
+      </div>
+
+      <div class="panel result-panel" id="results" aria-live="polite">
+        <div class="panel-heading">
+          <div>
+            <div class="section-kicker">02 / ANALYSIS</div>
+            <h2>Security report</h2>
+          </div>
+          <span class="report-tag">LIVE RESULTS</span>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="empty-art">
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="shield-art">✓</div>
+          </div>
+          <h3>Your report starts here</h3>
+          <p>Submit a message to see its risk assessment, detected warning signs and recommended next steps.</p>
+          <div class="empty-footer">
+            <span>01</span> Paste a message
+            <span class="mini-arrow">→</span>
+            <span>02</span> Review evidence
+          </div>
+        </div>
+
+        <div id="loading-state" class="loading-state" hidden>
+          <div class="loader"></div>
+          <h3>Analyzing message...</h3>
+          <p>Checking available phishing indicators.</p>
+        </div>
+
+        <div id="result-content" hidden>
+          <div id="risk-card" class="risk-card">
+            <div class="risk-topline">
+              <span class="risk-caption">OVERALL RISK</span>
+              <span id="risk-badge" class="risk-badge">SUSPICIOUS</span>
+            </div>
+            <div class="score-row">
+              <div>
+                <div class="score-display">
+                  <span id="risk-score">--</span><span class="score-max">/100</span>
+                </div>
+                <p id="risk-summary">Review the detected warning signs.</p>
+              </div>
+              <div id="risk-symbol" class="risk-symbol">!</div>
+            </div>
+            <div
+              id="risk-meter"
+              class="risk-meter"
+              role="progressbar"
+              aria-label="Phishing risk score"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <div id="risk-fill" class="risk-fill"></div>
+            </div>
+            <div class="meter-labels">
+              <span>LOW</span><span>MODERATE</span><span>HIGH</span>
+            </div>
+          </div>
+
+          <div class="report-section">
+            <div class="section-title">
+              <h3>Detected warning signs</h3>
+              <span id="flag-count" class="count-badge">0</span>
+            </div>
+            <div id="red-flags" class="red-flags"></div>
+          </div>
+
+          <div class="action-card">
+            <div class="action-icon">✓</div>
+            <div>
+              <div class="section-kicker">RECOMMENDED NEXT STEP</div>
+              <h3>Stay protected</h3>
+              <p id="next-action">Verify the message using an independent, official source.</p>
+            </div>
+          </div>
+
+          <p class="disclaimer">
+            This assessment is an indicator, not a guarantee. A low score does not
+            prove a message is safe. Verify important requests independently.
+          </p>
+          <button type="button" id="reset-btn" class="secondary-btn">
+            Analyze another message ↗
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom-note">
+      <div class="bottom-icon">✳</div>
+      <div>
+        <h3>Security starts with awareness.</h3>
+        <p>Unexpected payments, requests for credentials and deceptive links deserve extra scrutiny.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>PHISHGUARD AI · HACKATHON PROTOTYPE</span>
+      <span>Built for safer digital decisions.</span>
+    </footer>
+  </main>
+</body>
+</html>
