@@ -1,4 +1,4 @@
-# PhishLens Student Shield 🛡️🎓
+# Utkarsh Ki Fish 🛡️🐟
 
 **Real-time, private, explainable phishing protection engineered for students — running 100% locally in your browser with zero network calls, zero tracking, and zero paid API dependencies.**
 

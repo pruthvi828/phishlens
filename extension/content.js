@@ -251,8 +251,8 @@
           <div class="banner-container">
             <div class="header-row">
               <div class="brand-badge">
-                <span>🛡️ PhishLens</span>
-                <span style="font-size:11px;opacity:0.85;">Student Shield</span>
+                <span>🛡️ Utkarsh Ki Fish</span>
+                <span style="font-size:11px;opacity:0.85;">Shield</span>
               </div>
               <span class="score-pill">${result.score}/100</span>
               <span class="level-pill">${result.level}</span>

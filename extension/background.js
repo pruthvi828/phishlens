@@ -77,11 +77,11 @@ function triggerDesktopNotification(tabId, result) {
     const notifId = `pl-shield-${tabId}-${Date.now()}`;
     const iconUrl = chrome.runtime.getURL("icons/icon128.png");
 
-    let alertTitle = "🚨 PhishLens Student Shield Alert";
+    let alertTitle = "🚨 Utkarsh Ki Fish Alert";
     if (result.threatCategory === "student_portal_spoof") {
-      alertTitle = "🚨 Fake Campus Portal Detected!";
+      alertTitle = "🚨 Utkarsh Ki Fish: Fake Campus Portal!";
     } else if (result.threatCategory === "financial_aid_scam") {
-      alertTitle = "🚨 Student Financial Aid Scam!";
+      alertTitle = "🚨 Utkarsh Ki Fish: Financial Aid Scam!";
     }
 
     const message = `[Risk ${score}/100 - ${result.level.toUpperCase()}] ${result.summary || "Suspicious phishing threat detected."}`;
@@ -138,7 +138,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       chrome.action.setTitle({
         tabId,
-        title: `PhishLens Student Shield: ${score}/100 — ${level.toUpperCase()}\n${result.summary || ""}`
+        title: `Utkarsh Ki Fish: ${score}/100 — ${level.toUpperCase()}\n${result.summary || ""}`
       });
 
       // 2. High-risk notification trigger (score >= 70 or dangerous)
